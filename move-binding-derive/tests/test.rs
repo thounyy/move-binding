@@ -26,7 +26,7 @@ pub async fn test() {
             Address::from_str(
                 "0x00ba8458097a879607d609817a05599dc3e9e73ce942f97d4f1262605a8bf0fc".into(),
             )
-                .unwrap(),
+            .unwrap(),
             None,
         )
         .await
@@ -41,4 +41,3 @@ pub async fn test() {
     println!("{}", Coin::<SUI>::type_());
     println!("{}", VecMap::<u64, SUI>::type_());
 }
-

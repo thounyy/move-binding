@@ -173,14 +173,14 @@ pub fn move_contract(input: TokenStream) -> TokenStream {
                         pub struct #struct_ident {
                             #(#field_tokens)*
                         }
-                        impl MoveType for #struct_ident {
-                            fn type_() -> TypeTag {
-                                TypeTag::Struct(Box::new(StructTag {
+                        impl MoveStruct for #struct_ident {
+                            fn struct_type() -> StructTag {
+                                StructTag {
                                     address: PACKAGE_ID,
                                     module: MODULE_NAME.into(),
                                     name: ident_str!(#name).into(),
                                     type_params: vec![],
-                                }))
+                                }
                             }
                         }
                     }
@@ -191,14 +191,14 @@ pub fn move_contract(input: TokenStream) -> TokenStream {
                             #(#field_tokens)*
                             #(#phantoms)*
                         }
-                        impl <#(#type_parameters:MoveType),*> MoveType for #struct_ident<#(#type_parameters),*> {
-                            fn type_() -> TypeTag {
-                                TypeTag::Struct(Box::new(StructTag {
+                        impl <#(#type_parameters:MoveType),*> MoveStruct for #struct_ident<#(#type_parameters),*> {
+                            fn struct_type() -> StructTag {
+                                StructTag {
                                     address: PACKAGE_ID,
                                     module: MODULE_NAME.into(),
                                     name: ident_str!(#name).into(),
                                     type_params: vec![#(#type_parameters::type_()),*],
-                                }))
+                                }
                             }
                         }
                     }
@@ -225,7 +225,7 @@ pub fn move_contract(input: TokenStream) -> TokenStream {
     let expanded = quote! {
         pub mod #package_ident{
             #(use #deps::*;)*
-            use move_types::{MoveType, AccountAddress, Identifier, IdentStr, ident_str, TypeTag, StructTag};
+            use move_types::{MoveType, MoveStruct, AccountAddress, Identifier, IdentStr, ident_str, TypeTag, StructTag};
             #(#module_tokens)*
         }
     };
@@ -345,7 +345,7 @@ impl MoveType {
                 (MOVE_STDLIB, "option", "Option") => {
                     format!(
                         "Option<{}>",
-                        type_arguments[0].to_rust_type(&own_package, current_module,)
+                        type_arguments[0].to_rust_type(&own_package, current_module, )
                     )
                 }
 
