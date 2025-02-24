@@ -19,8 +19,9 @@ reqwest = { version = "^0.12", features = ["blocking"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = "^1.0.138"
 sui-sdk-types = { git = "https://github.com/mystenlabs/sui-rust-sdk", features = ["serde"] }
-move-types = { path = "../move-types" }
+move-core-types = { git = "https://github.com/MystenLabs/sui.git" }
 
+move-types = { path = "../move-types" }
 
 [dev-dependencies]
 tokio = { version = "1.43.0", features = ["full"] }

@@ -177,8 +177,8 @@ pub fn move_contract(input: TokenStream) -> TokenStream {
                             fn type_() -> TypeTag {
                                 TypeTag::Struct(Box::new(StructTag {
                                     address: PACKAGE_ID,
-                                    module: Identifier::new(MODULE_NAME).unwrap(),
-                                    name: Identifier::new(#name).unwrap(),
+                                    module: MODULE_NAME.into(),
+                                    name: ident_str!(#name).into(),
                                     type_params: vec![],
                                 }))
                             }
@@ -195,8 +195,8 @@ pub fn move_contract(input: TokenStream) -> TokenStream {
                             fn type_() -> TypeTag {
                                 TypeTag::Struct(Box::new(StructTag {
                                     address: PACKAGE_ID,
-                                    module: Identifier::new(MODULE_NAME).unwrap(),
-                                    name: Identifier::new(#name).unwrap(),
+                                    module: MODULE_NAME.into(),
+                                    name: ident_str!(#name).into(),
                                     type_params: vec![#(#type_parameters::type_()),*],
                                 }))
                             }
@@ -213,8 +213,8 @@ pub fn move_contract(input: TokenStream) -> TokenStream {
             quote! {
                 pub mod #module_ident{
                     use super::*;
-                    pub const PACKAGE_ID: Address = Address::new([#(#addr_byte_ident),*]);
-                    pub const MODULE_NAME: &str = #module_name;
+                    pub const PACKAGE_ID: AccountAddress = AccountAddress::new([#(#addr_byte_ident),*]);
+                    pub const MODULE_NAME: &IdentStr = ident_str!(#module_name);
                     #(#struct_tokens)*
                 }
             }
@@ -225,8 +225,7 @@ pub fn move_contract(input: TokenStream) -> TokenStream {
     let expanded = quote! {
         pub mod #package_ident{
             #(use #deps::*;)*
-            use sui_sdk_types::{Address, Identifier, StructTag, TypeTag};
-            use move_types::MoveType;
+            use move_types::{MoveType, AccountAddress, Identifier, IdentStr, ident_str, TypeTag, StructTag};
             #(#module_tokens)*
         }
     };
