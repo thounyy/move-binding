@@ -1,0 +1,10 @@
+[workspace]
+resolver = "2"
+
+members = [
+    "move-types",
+    "move-binding-derive"
+]
+
+[workspace.dependencies]
+serde = "1.0.218"

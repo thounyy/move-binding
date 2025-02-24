@@ -1,0 +1,29 @@
+[package]
+name = "move-binding-derive"
+version = "0.1.0"
+authors = ["Mysten Labs <build@mystenlabs.com>"]
+license = "Apache-2.0"
+publish = false
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = "2.0.98"
+quote = "1.0.38"
+proc-macro2 = "1.0.93"
+itertools = "0.14.0"
+reqwest = { version = "0.12.12", features = ["blocking"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = "1.0.139"
+sui-types = { git = "https://github.com/mystenlabs/sui-rust-sdk", package = "sui-sdk-types", rev = "86a9e06", features = ["serde"] }
+move-types = { path = "../move-types" }
+
+
+[dev-dependencies]
+tokio = { version = "1.43.0", features = ["full"] }
+bcs = "0.1.6"
+sui-client = { git = "https://github.com/mystenlabs/sui-rust-sdk", package = "sui-graphql-client" , rev="86a9e06"}
+
