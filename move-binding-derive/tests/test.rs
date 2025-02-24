@@ -17,6 +17,8 @@ move_contract! {alias = "mvr_metadata", package = "@mvr/metadata", deps = [crate
 move_contract! {alias = "suins", package = "0xd22b24490e0bae52676651b4f56660a5ff8022a2576e0089f79b3c88d44e08f0", deps = [crate::sui]}
 move_contract! {alias = "mvr_core", package = "@mvr/core", deps = [crate::sui, crate::suins]}
 
+move_contract! {alias = "mvr_metadata_testnet", package = "@mvr/metadata", network = "testnet", deps = [crate::sui]}
+
 #[tokio::test]
 pub async fn test() {
     let client = Client::new("https://sui-mainnet.mystenlabs.com/graphql").unwrap();

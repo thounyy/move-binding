@@ -15,9 +15,9 @@ const MOVE_STDLIB: &str = "0x000000000000000000000000000000000000000000000000000
 const SUI_FRAMEWORK: &str = "0x0000000000000000000000000000000000000000000000000000000000000002";
 
 struct MoveContractArgs {
-    sui_env: SuiEnv,
+    sui_env: SuiNetwork,
     package_alias: String,
-    package_id: String,
+    package: String,
     deps: Vec<Path>,
 }
 
@@ -26,7 +26,7 @@ impl Parse for MoveContractArgs {
         let mut alias = None;
         let mut package = None;
         let mut deps = Vec::new();
-        let mut sui_env = SuiEnv::Mainnet;
+        let mut network = SuiNetwork::Mainnet;
 
         while !input.is_empty() {
             let key: Ident = input.parse()?; // Parse the key (e.g., alias, package, deps)
@@ -35,14 +35,7 @@ impl Parse for MoveContractArgs {
             if key == "alias" {
                 alias = Some(input.parse::<LitStr>()?.value()); // Parse string literal
             } else if key == "package" {
-                if let Ok(lit) = input.parse::<LitStr>() {
-                    let package_input = lit.value();
-                    if package_input.contains("@") || package_input.contains(".sui") {
-                        package = resolve_mvr_name(package_input)
-                    } else {
-                        package = Some(lit.value());
-                    }
-                }
+                package = Some(input.parse::<LitStr>()?.value()); // Parse string literal
             } else if key == "deps" {
                 let array: ExprArray = input.parse()?; // Parse `[ sui, move_stdlib ]`
                 deps = array
@@ -53,12 +46,12 @@ impl Parse for MoveContractArgs {
                         _ => panic!("Expected an identifier in deps list"),
                     })
                     .collect();
-            } else if key == "env" {
+            } else if key == "network" {
                 if let Ok(lit) = input.parse::<LitStr>() {
-                    sui_env = match lit.value().to_lowercase().as_str() {
-                        "mainnet" => SuiEnv::Mainnet,
-                        "testnet" => SuiEnv::Testnet,
-                        _ => SuiEnv::Custom(lit.value()),
+                    network = match lit.value().to_lowercase().as_str() {
+                        "mainnet" => SuiNetwork::Mainnet,
+                        "testnet" => SuiNetwork::Testnet,
+                        _ => return Err(syn::Error::new(key.span(), "Unknown network, only ['mainnet', 'testnet'] are supported."))
                     };
                 }
             } else {
@@ -71,9 +64,9 @@ impl Parse for MoveContractArgs {
         }
 
         Ok(MoveContractArgs {
-            sui_env,
+            sui_env: network,
             package_alias: alias.ok_or_else(|| syn::Error::new(input.span(), "Missing alias"))?,
-            package_id: package.ok_or_else(|| syn::Error::new(input.span(), "Missing package"))?,
+            package: package.ok_or_else(|| syn::Error::new(input.span(), "Missing package"))?,
             deps,
         })
     }
@@ -84,14 +77,24 @@ pub fn move_contract(input: TokenStream) -> TokenStream {
     let MoveContractArgs {
         sui_env,
         package_alias,
-        package_id,
+        package,
         deps,
     } = parse_macro_input!(input as MoveContractArgs);
 
-    let rpc_url = match sui_env {
-        SuiEnv::Mainnet => "https://rpc.mainnet.sui.io:443".to_string(),
-        SuiEnv::Testnet => "https://rpc.testnet.sui.io:443".to_string(),
-        SuiEnv::Custom(s) => s,
+    let rpc_url = match &sui_env {
+        SuiNetwork::Mainnet => "https://rpc.mainnet.sui.io:443".to_string(),
+        SuiNetwork::Testnet => "https://rpc.testnet.sui.io:443".to_string(),
+    };
+
+    let gql_url = match sui_env {
+        SuiNetwork::Mainnet => "https://mvr-rpc.sui-mainnet.mystenlabs.com/graphql".to_string(),
+        SuiNetwork::Testnet => "https://mvr-rpc.sui-testnet.mystenlabs.com/graphql".to_string(),
+    };
+
+    let package_id = if package.contains("@") || package.contains(".sui") {
+        resolve_mvr_name(package, &gql_url).expect("Cannot resolve mvr name")
+    } else {
+        package
     };
 
     let client = reqwest::blocking::Client::new();
@@ -232,12 +235,12 @@ pub fn move_contract(input: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
-fn resolve_mvr_name(package: String) -> Option<String> {
+fn resolve_mvr_name(package: String, url: &str) -> Option<String> {
     let client = reqwest::blocking::Client::new();
     let request = format!(r#"{{packageByName(name:"{package}"){{address}}}}"#);
 
     let res = client
-        .post("https://mvr-rpc.sui-mainnet.mystenlabs.com/graphql")
+        .post(url)
         .header(CONTENT_TYPE, "application/json")
         .json(&json!({
             "query": request,
@@ -252,10 +255,9 @@ fn resolve_mvr_name(package: String) -> Option<String> {
     )
 }
 
-enum SuiEnv {
+enum SuiNetwork {
     Mainnet,
     Testnet,
-    Custom(String),
 }
 
 #[allow(dead_code)]
