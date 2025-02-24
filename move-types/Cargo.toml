@@ -8,4 +8,4 @@ edition = "2021"
 
 [dependencies]
 serde.workspace = true
-sui-types = { git = "https://github.com/mystenlabs/sui-rust-sdk", package = "sui-sdk-types", rev = "86a9e06", features = ["serde"] }
+sui-types = { git = "https://github.com/mystenlabs/sui-rust-sdk", package = "sui-sdk-types", features = ["serde"] }
