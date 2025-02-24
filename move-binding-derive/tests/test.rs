@@ -1,6 +1,6 @@
 use std::str::FromStr;
 use sui_client::Client;
-use sui_types::{Address, ObjectData};
+use sui_sdk_types::{Address, ObjectData};
 
 use crate::bridge::bridge::BridgeInner;
 use crate::sui::coin::Coin;

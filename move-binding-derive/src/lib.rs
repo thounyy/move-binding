@@ -7,7 +7,7 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
 use std::str::FromStr;
-use sui_types::{Address, ObjectId};
+use sui_sdk_types::{Address, ObjectId};
 use syn::parse::{Parse, ParseStream};
 use syn::{parse_macro_input, ExprArray, LitStr, Path, Token};
 
@@ -225,7 +225,7 @@ pub fn move_contract(input: TokenStream) -> TokenStream {
     let expanded = quote! {
         pub mod #package_ident{
             #(use #deps::*;)*
-            use sui_types::{Address, Identifier, StructTag, TypeTag};
+            use sui_sdk_types::{Address, Identifier, StructTag, TypeTag};
             use move_types::MoveType;
             #(#module_tokens)*
         }
@@ -311,8 +311,8 @@ impl MoveType {
             MoveType::U64 => "u64".to_string(),
             MoveType::U128 => "u128".to_string(),
             MoveType::U256 => "u256".to_string(),
-            MoveType::Address => "sui_types::Address".to_string(),
-            MoveType::Signer => "sui_types::Address".to_string(),
+            MoveType::Address => "sui_sdk_types::Address".to_string(),
+            MoveType::Signer => "sui_sdk_types::Address".to_string(),
             t @ MoveType::Struct { .. } => t.try_resolve_known_types(own_package, current_module),
             MoveType::Vector(t) => {
                 format!("Vec<{}>", t.to_rust_type(own_package, current_module))
@@ -350,8 +350,8 @@ impl MoveType {
                     )
                 }
 
-                (SUI_FRAMEWORK, "object", "UID") => "sui_types::ObjectId".to_string(),
-                (SUI_FRAMEWORK, "object", "ID") => "sui_types::ObjectId".to_string(),
+                (SUI_FRAMEWORK, "object", "UID") => "sui_sdk_types::ObjectId".to_string(),
+                (SUI_FRAMEWORK, "object", "ID") => "sui_sdk_types::ObjectId".to_string(),
                 _ => {
                     if type_arguments.is_empty() {
                         format!("{module}::{name}")
