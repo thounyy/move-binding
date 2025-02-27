@@ -8,4 +8,5 @@ edition = "2021"
 
 [dependencies]
 serde.workspace = true
-move-core-types = { git = "https://github.com/MystenLabs/sui.git" }
+sui-sdk-types = { git = "https://github.com/mystenlabs/sui-rust-sdk", features = ["serde"] }
+primitive-types = "^0.10"
