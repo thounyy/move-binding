@@ -1861,7 +1861,7 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 [[package]]
 name = "sui-graphql-client"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui-rust-sdk#d1a9298f220fee6b89b534fa0d37a238f689471f"
+source = "git+https://github.com/mystenlabs/sui-rust-sdk?rev=86a9e06#86a9e06cde84671e96e776d926a85fc1f229314d"
 dependencies = [
  "anyhow",
  "async-stream",
@@ -1884,7 +1884,7 @@ dependencies = [
 [[package]]
 name = "sui-graphql-client-build"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui-rust-sdk#d1a9298f220fee6b89b534fa0d37a238f689471f"
+source = "git+https://github.com/mystenlabs/sui-rust-sdk?rev=86a9e06#86a9e06cde84671e96e776d926a85fc1f229314d"
 dependencies = [
  "cynic-codegen",
 ]
@@ -1892,7 +1892,7 @@ dependencies = [
 [[package]]
 name = "sui-sdk-types"
 version = "0.0.2"
-source = "git+https://github.com/mystenlabs/sui-rust-sdk#d1a9298f220fee6b89b534fa0d37a238f689471f"
+source = "git+https://github.com/mystenlabs/sui-rust-sdk?rev=86a9e06#86a9e06cde84671e96e776d926a85fc1f229314d"
 dependencies = [
  "base64ct",
  "bcs",
@@ -1905,13 +1905,13 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "serde_with",
- "winnow 0.7.3",
+ "winnow 0.6.26",
 ]
 
 [[package]]
 name = "sui-transaction-builder"
 version = "0.1.0"
-source = "git+https://github.com/mystenlabs/sui-rust-sdk#d1a9298f220fee6b89b534fa0d37a238f689471f"
+source = "git+https://github.com/mystenlabs/sui-rust-sdk?rev=86a9e06#86a9e06cde84671e96e776d926a85fc1f229314d"
 dependencies = [
  "base64ct",
  "bcs",
@@ -2553,9 +2553,9 @@ dependencies = [
 
 [[package]]
 name = "winnow"
-version = "0.7.3"
+version = "0.6.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e7f4ea97f6f78012141bcdb6a216b2609f0979ada50b20ca5b52dde2eac2bb1"
+checksum = "1e90edd2ac1aa278a5c4599b1d89cf03074b610800f866d4026dc199d7929a28"
 dependencies = [
  "memchr",
 ]

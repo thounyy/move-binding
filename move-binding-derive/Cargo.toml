@@ -18,12 +18,12 @@ itertools = "0.14.0"
 reqwest = { version = "^0.12", features = ["blocking"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = "^1.0.138"
-sui-sdk-types = { git = "https://github.com/mystenlabs/sui-rust-sdk", features = ["serde"] }
-sui-transaction-builder = { git = "https://github.com/mystenlabs/sui-rust-sdk" }
+sui-sdk-types = { git = "https://github.com/mystenlabs/sui-rust-sdk", features = ["serde"], rev="86a9e06"}
+sui-transaction-builder = { git = "https://github.com/mystenlabs/sui-rust-sdk", rev="86a9e06"}
 move-types = { path = "../move-types" }
 
 [dev-dependencies]
 tokio = { version = "1.43.0", features = ["full"] }
 bcs = "0.1.6"
-sui-client = { git = "https://github.com/mystenlabs/sui-rust-sdk", package = "sui-graphql-client"}
+sui-client = { git = "https://github.com/mystenlabs/sui-rust-sdk", package = "sui-graphql-client", rev="86a9e06"}
 
