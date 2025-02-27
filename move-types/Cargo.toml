@@ -9,4 +9,5 @@ edition = "2021"
 [dependencies]
 serde.workspace = true
 sui-sdk-types = { git = "https://github.com/mystenlabs/sui-rust-sdk", features = ["serde"] }
-primitive-types = "^0.10"
+sui-transaction-builder = { git = "https://github.com/mystenlabs/sui-rust-sdk" }
+primitive-types = { version = "^0.10" , features = ["serde"]}

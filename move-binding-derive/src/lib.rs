@@ -299,6 +299,7 @@ fn create_struct(move_struct: &Value, struct_name: &str) -> proc_macro2::TokenSt
 
     let mut derives = vec![
         quote! {serde::Deserialize},
+        quote! {serde::Serialize},
         quote! {Debug},
         quote! {MoveStruct},
     ];
@@ -347,22 +348,30 @@ fn create_fun(
     fun_name: &str,
 ) -> Option<proc_macro2::TokenStream> {
     let fun = fun.as_object()?;
-    let (param_names, mut params) = fun["parameters"]
+    let (param_names, mut params, non_ref_args) = fun["parameters"]
         .as_array()?
         .iter()
         .enumerate()
-        .flat_map(|(i, v)| {
+        .fold((vec![], vec![], vec![]), |(mut param_names, mut params, mut non_ref_args), (i, v)| {
             let field_ident = Ident::new(&format!("p{i}"), proc_macro2::Span::call_site());
-            let move_type: MoveType = serde_json::from_value(v.clone()).ok()?;
-
-            // filter out TxContext
-            if matches!(&move_type, MoveType::Reference(r) | MoveType::MutableReference(r)
-                if matches!(&**r, MoveType::Struct{address, name, ..} if address == &Address::TWO && name.as_str() == "TxContext")) {
-                return None;
+            let move_type: MoveType = serde_json::from_value(v.clone()).unwrap();
+            match &move_type {
+                MoveType::Reference(r) |
+                MoveType::MutableReference(r) => {
+                    // filter out TxContext
+                    if matches!(&**r, MoveType::Struct{address, name, ..} if address == &Address::TWO && name.as_str() == "TxContext"){
+                        return (param_names, params, non_ref_args);
+                    }
+                }
+                _ => {
+                    non_ref_args.push(quote! {#field_ident})
+                }
             }
-            let field_type: syn::Type = syn::parse_str(&move_type.to_arg_type()).ok()?;
-            Some((quote! {#field_ident}, quote! {#field_ident: #field_type}))
-        }).collect::<(Vec<_>, Vec<_>)>();
+            param_names.push(quote! {#field_ident});
+            let field_type: syn::Type = syn::parse_str(&move_type.to_arg_type()).unwrap();
+            params.push(quote! {#field_ident: #field_type});
+            (param_names, params, non_ref_args)
+        });
     params.insert(0, quote! {builder: &mut sui_transaction_builder::TransactionBuilder});
 
     let returns = fun["return"]
@@ -396,12 +405,13 @@ fn create_fun(
         }
     } else {
         quote! {
-            pub fn #fun_ident <#(#types:MoveType),*>(#(#params),*) #maybe_returns
+            pub fn #fun_ident <#(#types:MoveType + serde::Serialize),*>(#(#params),*) #maybe_returns
         }
     };
 
     let fun_impl = quote! {
         #sig {
+            #(let #non_ref_args = #non_ref_args.maybe_resolve_arg(builder);)*
             builder.move_call(
                 sui_transaction_builder::Function::new(
                     PACKAGE_ID,

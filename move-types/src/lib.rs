@@ -94,6 +94,17 @@ impl MoveType for String {
     }
 }
 
+impl MoveType for &str {
+    fn type_() -> TypeTag {
+        TypeTag::Struct(Box::new(StructTag {
+            address: MOVE_STDLIB,
+            module: Identifier::from_str("string").unwrap(),
+            name: Identifier::from_str("String").unwrap(),
+            type_params: vec![],
+        }))
+    }
+}
+
 impl<T: MoveType> MoveType for Option<T> {
     fn type_() -> TypeTag {
         TypeTag::Struct(Box::new(StructTag {
