@@ -384,12 +384,22 @@ fn create_fun(
         })
         .collect::<Vec<_>>();
 
-    let types = fun["typeParameters"]
+    let (types, types_with_ability) = fun["typeParameters"]
         .as_array()?
         .iter()
         .enumerate()
-        .map(|(i, _)| Ident::new(&format!("T{i}"), proc_macro2::Span::call_site()))
-        .collect::<Vec<_>>();
+        .fold((vec![], vec![]),|(mut types, mut types_with_ability),(i, v)| {
+            let abilities = v["abilities"].as_array().cloned().unwrap_or_default();
+            let has_key = abilities.iter().any(|v|v.as_str().is_some_and(|v|v == "Key"));
+            let ident = Ident::new(&format!("T{i}"), proc_macro2::Span::call_site());
+            types.push(ident.clone());
+            let mut abilities = vec![quote! {MoveType}, quote! {serde::Serialize}];
+            if has_key{
+                abilities.push(quote! {move_types::Key});
+            }
+            types_with_ability.push(quote!{#ident: #(#abilities)+*});
+                (types, types_with_ability)
+        });
 
     let fun_ident = Ident::new(fun_name, proc_macro2::Span::call_site());
 
@@ -405,7 +415,7 @@ fn create_fun(
         }
     } else {
         quote! {
-            pub fn #fun_ident <#(#types:MoveType + serde::Serialize),*>(#(#params),*) #maybe_returns
+            pub fn #fun_ident <#(#types_with_ability),*>(#(#params),*) #maybe_returns
         }
     };
 

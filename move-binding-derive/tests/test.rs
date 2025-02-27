@@ -1,17 +1,14 @@
 use crate::bridge::bridge::BridgeInner;
-use crate::sui::coin::Coin;
 use crate::sui::dynamic_field::Field;
-use crate::sui::sui::SUI;
-use crate::sui::vec_map::VecMap;
-use crate::test_pkg::test_mod::Test;
 use move_binding_derive::move_contract;
-use move_types::{Key, MoveType};
+use move_types::Key;
 use std::str::FromStr;
 use sui_client::Client;
 use sui_sdk_types::{Address, ObjectData, ObjectId};
 use sui_transaction_builder::unresolved::Input;
 use sui_transaction_builder::TransactionBuilder;
 
+move_contract! {alias = "move_lib", package = "0x1"}
 move_contract! {alias = "sui", package = "0x2"}
 move_contract! {alias = "sui_system", package = "0x3", deps = [crate::sui]}
 move_contract! {alias = "bridge", package = "0xb", deps = [crate::sui, crate::sui_system]}
@@ -67,47 +64,4 @@ pub async fn test_function_call() {
     let result = client.dry_run_tx(&tx, None).await.unwrap();
 
     println!("{:?}", result);
-}
-
-pub mod test_pkg {
-    pub mod test_mod {
-        use move_binding_derive::MoveStruct;
-        use move_types::functions::{Arg, Ref};
-        use move_types::Address;
-        use move_types::MoveType;
-        use std::marker::PhantomData;
-        use std::str::FromStr;
-        use sui_sdk_types::Identifier;
-        use sui_transaction_builder::{Function, TransactionBuilder};
-
-        pub const PACKAGE_ID: Address = Address::new([0; 32]);
-        pub const MODULE_NAME: &str = "test";
-
-        #[derive(MoveStruct)]
-        pub struct Test<T0> {
-            phantom_data: PhantomData<T0>,
-        }
-
-        pub trait MoveModule {
-            fn move_fun1<T0: MoveType, T1: MoveType>(&mut self, input: Ref<T0>) -> Arg<u64>;
-            fn move_fun2(&mut self) -> String;
-        }
-        impl MoveModule for TransactionBuilder {
-            fn move_fun1<T0: MoveType, T1: MoveType>(&mut self, input: Ref<T0>) -> Arg<u64> {
-                self.move_call(
-                    Function::new(
-                        PACKAGE_ID,
-                        Identifier::from_str(MODULE_NAME).unwrap(),
-                        Identifier::from_str("").unwrap(),
-                        vec![T0::type_(), T1::type_()],
-                    ),
-                    vec![input.into()],
-                )
-                    .into()
-            }
-            fn move_fun2(&mut self) -> String {
-                todo!()
-            }
-        }
-    }
 }
