@@ -27,7 +27,7 @@ pub async fn test_deserialize_object() {
             Address::from_str(
                 "0x00ba8458097a879607d609817a05599dc3e9e73ce942f97d4f1262605a8bf0fc".into(),
             )
-                .unwrap(),
+            .unwrap(),
             None,
         )
         .await
@@ -46,18 +46,34 @@ pub async fn test_function_call() {
     let client = Client::new("https://sui-mainnet.mystenlabs.com/graphql").unwrap();
 
     let owner = Address::from_str("0x2").unwrap();
-    let gas = ObjectId::from_str("0x726b714a3c4c681d8a9b1ff1833ad368585579a273362e1cbd738c0c8f70dabd").unwrap();
+    let gas =
+        ObjectId::from_str("0x726b714a3c4c681d8a9b1ff1833ad368585579a273362e1cbd738c0c8f70dabd")
+            .unwrap();
     let gas = client.object(gas.into(), None).await.unwrap().unwrap();
 
     let mut builder = TransactionBuilder::new();
     builder.set_sender(owner);
-    builder.add_gas_objects(vec![Input::owned(gas.object_id(), gas.version(), gas.digest())]);
+    builder.add_gas_objects(vec![Input::owned(
+        gas.object_id(),
+        gas.version(),
+        gas.digest(),
+    )]);
     builder.set_gas_budget(10000000);
     builder.set_gas_price(1000);
 
     let mut new_bag = sui::bag::new(&mut builder);
-    sui::bag::add(&mut builder, new_bag.borrow_mut(), "Test".into(), "Test_value".into());
-    sui::bag::add(&mut builder, new_bag.borrow_mut(), "Test2".into(), "Test_value2".into());
+    sui::bag::add(
+        &mut builder,
+        new_bag.borrow_mut(),
+        "Test".into(),
+        "Test_value".into(),
+    );
+    sui::bag::add(
+        &mut builder,
+        new_bag.borrow_mut(),
+        "Test2".into(),
+        "Test_value2".into(),
+    );
     sui::transfer::public_transfer(&mut builder, new_bag, owner.into());
 
     let tx = builder.finish().unwrap();

@@ -1,3 +1,5 @@
+mod package_provider;
+use crate::package_provider::{ModuleProvider, MoveFunction, MoveStruct, RPCModuleProvider};
 use itertools::Itertools;
 use move_types::MOVE_STDLIB;
 use proc_macro::TokenStream;
@@ -5,7 +7,8 @@ use proc_macro2::Ident;
 use quote::quote;
 use reqwest::header::CONTENT_TYPE;
 use serde::Deserialize;
-use serde_json::{json, Map, Value};
+use serde_json::{json, Value};
+use std::collections::HashMap;
 use std::str::FromStr;
 use sui_sdk_types::{Address, Identifier};
 use syn::parse::{Parse, ParseStream};
@@ -91,7 +94,7 @@ pub fn move_struct_derive(input: TokenStream) -> TokenStream {
 }
 
 struct MoveContractArgs {
-    sui_env: SuiNetwork,
+    network: SuiNetwork,
     package_alias: String,
     package: String,
     deps: Vec<Path>,
@@ -145,7 +148,7 @@ impl Parse for MoveContractArgs {
         }
 
         Ok(MoveContractArgs {
-            sui_env: network,
+            network,
             package_alias: alias.ok_or_else(|| syn::Error::new(input.span(), "Missing alias"))?,
             package: package.ok_or_else(|| syn::Error::new(input.span(), "Missing package"))?,
             deps,
@@ -156,70 +159,34 @@ impl Parse for MoveContractArgs {
 #[proc_macro]
 pub fn move_contract(input: TokenStream) -> TokenStream {
     let MoveContractArgs {
-        sui_env,
+        network,
         package_alias,
         package,
         deps,
     } = parse_macro_input!(input as MoveContractArgs);
 
-    let rpc_url = match &sui_env {
-        SuiNetwork::Mainnet => "https://rpc.mainnet.sui.io:443".to_string(),
-        SuiNetwork::Testnet => "https://rpc.testnet.sui.io:443".to_string(),
-    };
-
-    let gql_url = match sui_env {
-        SuiNetwork::Mainnet => "https://mvr-rpc.sui-mainnet.mystenlabs.com/graphql".to_string(),
-        SuiNetwork::Testnet => "https://mvr-rpc.sui-testnet.mystenlabs.com/graphql".to_string(),
-    };
-
     let package_id = if package.contains("@") || package.contains(".sui") {
-        resolve_mvr_name(package, &gql_url).expect("Cannot resolve mvr name")
+        resolve_mvr_name(package, &network.gql()).expect("Cannot resolve mvr name")
     } else {
         Address::from_str(&package).expect("Error parsing package id.")
     };
 
-    let client = reqwest::blocking::Client::new();
-    let res = client
-        .post(rpc_url)
-        .header(CONTENT_TYPE, "application/json")
-        .body(format!(
-            r#"
-                {{
-                  "jsonrpc": "2.0",
-                  "id": 1,
-                  "method": "sui_getNormalizedMoveModulesByPackage",
-                  "params": [
-                    "{package_id}"
-                  ]
-                }}
-        "#
-        ))
-        .send()
-        .unwrap();
+    let module_provider = RPCModuleProvider::new(network);
+    let modules = module_provider.get_modules(package_id);
 
-    let response = res.json::<Value>().unwrap();
-    let package_data = response["result"].as_object().unwrap();
-
-    let module_tokens = package_data.iter().map(|(module_name, module)| {
+    let module_tokens = modules.iter().map(|(module_name, module)| {
         let module_ident = Ident::new(module_name, proc_macro2::Span::call_site());
+        let mut struct_fun_tokens = create_structs(&module.structs);
 
-        let structs = module["structs"].as_object().unwrap();
-        let module_address: Address = serde_json::from_value(module["address"].clone())
-            .expect("Error parsing module address.");
-
-        let mut struct_fun_tokens = create_structs(structs);
-
-        if let Some(funs) = module["exposedFunctions"].as_object() {
-            if !funs.is_empty() {
-                let fun_impl = create_funs(funs);
-                struct_fun_tokens.extend(fun_impl);
-            }
+        if !module.exposed_functions.is_empty() {
+            let fun_impl = create_funs(&module.exposed_functions);
+            struct_fun_tokens.extend(fun_impl);
         }
 
         if struct_fun_tokens.is_empty() {
             quote! {}
         } else {
-            let addr_byte_ident = module_address.as_bytes();
+            let addr_byte_ident = module.address.as_bytes();
             quote! {
                 pub mod #module_ident{
                     use super::*;
@@ -262,20 +229,21 @@ fn resolve_mvr_name(package: String, url: &str) -> Option<Address> {
         .ok()
 }
 
-fn create_structs(structs: &Map<String, Value>) -> Vec<proc_macro2::TokenStream> {
+fn create_structs(structs: &HashMap<String, MoveStruct>) -> Vec<proc_macro2::TokenStream> {
     structs
         .iter()
-        .map(|(name, move_struct)| create_struct(move_struct, name))
+        .map(|(name, move_struct)| create_struct(name, move_struct))
         .collect()
 }
 
-fn create_struct(move_struct: &Value, struct_name: &str) -> proc_macro2::TokenStream {
-    let type_parameters = move_struct["typeParameters"].as_array().cloned();
-    let (type_parameters, phantoms) = type_parameters.iter().flatten().enumerate().fold(
+fn create_struct(struct_name: &str, move_struct: &MoveStruct) -> proc_macro2::TokenStream {
+    let (type_parameters, phantoms) = move_struct.type_parameters.iter().enumerate().fold(
         (vec![], vec![]),
         |(mut type_parameters, mut phantoms), (i, v)| {
-            type_parameters.push(Ident::new(&format!("T{i}"), proc_macro2::Span::call_site()));
-            if let Some(true) = v["isPhantom"].as_bool() {
+            let ident = Ident::new(&format!("T{i}"), proc_macro2::Span::call_site());
+            type_parameters.push(quote! {#ident});
+
+            if v.is_phantom {
                 let name = Ident::new(&format!("phantom_data_{i}"), proc_macro2::Span::call_site());
                 let type_: syn::Type =
                     syn::parse_str(&format!("std::marker::PhantomData<T{i}>")).unwrap();
@@ -285,15 +253,10 @@ fn create_struct(move_struct: &Value, struct_name: &str) -> proc_macro2::TokenSt
         },
     );
 
-    let fields = move_struct["fields"].as_array().unwrap();
     let struct_ident = Ident::new(struct_name, proc_macro2::Span::call_site());
-    let field_tokens = fields.iter().map(|field| {
-        let field_ident = Ident::new(
-            &escape_keyword(field["name"].as_str().unwrap().to_string()),
-            proc_macro2::Span::call_site(),
-        );
-        let move_type: MoveType = serde_json::from_value(field["type"].clone()).unwrap();
-        let field_type: syn::Type = syn::parse_str(&move_type.to_rust_type()).unwrap();
+    let field_tokens = move_struct.fields.iter().map(|field| {
+        let field_ident = Ident::new(&escape_keyword(&field.name), proc_macro2::Span::call_site());
+        let field_type: syn::Type = syn::parse_str(&field.type_.to_rust_type()).unwrap();
         quote! {pub #field_ident: #field_type,}
     });
 
@@ -302,9 +265,10 @@ fn create_struct(move_struct: &Value, struct_name: &str) -> proc_macro2::TokenSt
         quote! {serde::Serialize},
         quote! {Debug},
         quote! {MoveStruct},
+        quote! {Clone},
     ];
 
-    if has_key(move_struct).unwrap_or_default() {
+    if move_struct.abilities.has_key() {
         derives.push(quote! {Key});
     }
 
@@ -326,40 +290,23 @@ fn create_struct(move_struct: &Value, struct_name: &str) -> proc_macro2::TokenSt
     }
 }
 
-fn has_key(move_struct: &Value) -> Option<bool> {
-    Some(
-        move_struct["abilities"].as_object()?["abilities"]
-            .as_array()?
-            .iter()
-            .any(|v| matches!(v.as_str(), Some("Key"))),
-    )
-}
-
-fn create_funs(
-    funs: &Map<String, Value>,
-) -> Vec<proc_macro2::TokenStream> {
+fn create_funs(funs: &HashMap<String, MoveFunction>) -> Vec<proc_macro2::TokenStream> {
     funs.iter()
-        .flat_map(|(name, fun)| create_fun(fun, name))
+        .flat_map(|(name, fun)| create_fun(name, fun))
         .collect()
 }
 
-fn create_fun(
-    fun: &Value,
-    fun_name: &str,
-) -> Option<proc_macro2::TokenStream> {
-    let fun = fun.as_object()?;
-    let (param_names, mut params, non_ref_args) = fun["parameters"]
-        .as_array()?
+fn create_fun(fun_name: &str, fun: &MoveFunction) -> Option<proc_macro2::TokenStream> {
+    let (param_names, mut params, non_ref_args) = fun.parameters
         .iter()
         .enumerate()
-        .fold((vec![], vec![], vec![]), |(mut param_names, mut params, mut non_ref_args), (i, v)| {
+        .fold((vec![], vec![], vec![]), |(mut param_names, mut params, mut non_ref_args), (i, move_type)| {
             let field_ident = Ident::new(&format!("p{i}"), proc_macro2::Span::call_site());
-            let move_type: MoveType = serde_json::from_value(v.clone()).unwrap();
             match &move_type {
                 MoveType::Reference(r) |
                 MoveType::MutableReference(r) => {
                     // filter out TxContext
-                    if matches!(&**r, MoveType::Struct{address, name, ..} if address == &Address::TWO && name.as_str() == "TxContext"){
+                    if matches!(&**r, MoveType::Struct{address, name, ..} if address == &Address::TWO && name.as_str() == "TxContext") {
                         return (param_names, params, non_ref_args);
                     }
                 }
@@ -372,34 +319,30 @@ fn create_fun(
             params.push(quote! {#field_ident: #field_type});
             (param_names, params, non_ref_args)
         });
-    params.insert(0, quote! {builder: &mut sui_transaction_builder::TransactionBuilder});
+    params.insert(
+        0,
+        quote! {builder: &mut sui_transaction_builder::TransactionBuilder},
+    );
 
-    let returns = fun["return"]
-        .as_array()?
+    let returns = fun
+        .return_
         .iter()
-        .flat_map(|v| {
-            let move_type: MoveType = serde_json::from_value(v.clone()).ok()?;
-            let field_type: syn::Type = syn::parse_str(&move_type.to_arg_type()).ok()?;
-            Some(field_type)
-        })
+        .flat_map(|move_type| syn::parse_str::<syn::Type>(&move_type.to_arg_type()).ok())
         .collect::<Vec<_>>();
 
-    let (types, types_with_ability) = fun["typeParameters"]
-        .as_array()?
-        .iter()
-        .enumerate()
-        .fold((vec![], vec![]),|(mut types, mut types_with_ability),(i, v)| {
-            let abilities = v["abilities"].as_array().cloned().unwrap_or_default();
-            let has_key = abilities.iter().any(|v|v.as_str().is_some_and(|v|v == "Key"));
+    let (types, types_with_ability) = fun.type_parameters.iter().enumerate().fold(
+        (vec![], vec![]),
+        |(mut types, mut types_with_ability), (i, v)| {
             let ident = Ident::new(&format!("T{i}"), proc_macro2::Span::call_site());
             types.push(ident.clone());
             let mut abilities = vec![quote! {MoveType}, quote! {serde::Serialize}];
-            if has_key{
+            if v.has_key() {
                 abilities.push(quote! {move_types::Key});
             }
-            types_with_ability.push(quote!{#ident: #(#abilities)+*});
-                (types, types_with_ability)
-        });
+            types_with_ability.push(quote! {#ident: #(#abilities)+*});
+            (types, types_with_ability)
+        },
+    );
 
     let fun_ident = Ident::new(fun_name, proc_macro2::Span::call_site());
 
@@ -442,13 +385,28 @@ enum SuiNetwork {
     Testnet,
 }
 
-fn escape_keyword(mut name: String) -> String {
-    match name.as_str() {
-        "for" | "ref" => {
-            name.push('_');
-            name
+impl SuiNetwork {
+    fn rpc(&self) -> &str {
+        match self {
+            SuiNetwork::Mainnet => "https://rpc.mainnet.sui.io:443",
+            SuiNetwork::Testnet => "https://rpc.testnet.sui.io:443",
         }
-        _ => name,
+    }
+
+    fn gql(&self) -> &str {
+        match self {
+            SuiNetwork::Mainnet => "https://mvr-rpc.sui-mainnet.mystenlabs.com/graphql",
+            SuiNetwork::Testnet => "https://mvr-rpc.sui-testnet.mystenlabs.com/graphql",
+        }
+    }
+}
+
+fn escape_keyword(name: &str) -> String {
+    match name {
+        "for" | "ref" => {
+            format!("{name}_")
+        }
+        _ => name.to_string(),
     }
 }
 

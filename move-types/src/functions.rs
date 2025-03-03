@@ -76,24 +76,24 @@ impl<T: MoveType + Serialize> Arg<T> {
     pub fn maybe_resolve_arg(self, builder: &mut TransactionBuilder) -> Self {
         if self.inner.is_none() {
             if let Some(data) = &self.data {
-                return Self{
+                return Self {
                     inner: Some(builder.input(Serialized(data))),
                     data: None,
-                }
+                };
             }
         }
         self
     }
 
-    pub fn borrow(&self) -> Ref<T>{
-        Ref{
+    pub fn borrow(&self) -> Ref<T> {
+        Ref {
             phantom_data: Default::default(),
             inner: self.inner.expect("Cannot borrow unresolved Arg."),
         }
     }
 
-    pub fn borrow_mut(&mut self) -> MutRef<T>{
-        MutRef{
+    pub fn borrow_mut(&mut self) -> MutRef<T> {
+        MutRef {
             phantom_data: Default::default(),
             inner: self.inner.expect("Cannot borrow unresolved Arg."),
         }
