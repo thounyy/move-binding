@@ -1,101 +1,128 @@
-use crate::MoveType;
 use serde::Serialize;
-use std::marker::PhantomData;
+use crate::MoveType;
 use sui_sdk_types::Argument;
+use sui_transaction_builder::unresolved::Input;
 use sui_transaction_builder::{Serialized, TransactionBuilder};
 
-pub struct Arg<T: MoveType> {
-    inner: Option<Argument>,
-    data: Option<T>,
+pub enum Arg<T> {
+    Resolved(Argument),
+    Raw(T),
 }
 
-pub struct Ref<T: MoveType> {
-    phantom_data: PhantomData<T>,
-    inner: Argument,
+pub enum Ref<'a, T> {
+    Resolved(Argument),
+    Raw(&'a T),
 }
 
-pub struct MutRef<T: MoveType> {
-    phantom_data: PhantomData<T>,
-    inner: Argument,
+pub enum MutRef<'a, T> {
+    Resolved(Argument),
+    Raw(&'a mut T),
 }
 
-impl<T: MoveType> From<Argument> for MutRef<T> {
+impl<T: MoveType> From<Argument> for MutRef<'_, T> {
     fn from(value: Argument) -> Self {
-        Self {
-            phantom_data: Default::default(),
-            inner: value,
-        }
+        Self::Resolved(value)
     }
 }
 
-impl<T: MoveType> From<Argument> for Ref<T> {
+impl<T: MoveType> From<Argument> for Ref<'_, T> {
     fn from(value: Argument) -> Self {
-        Self {
-            phantom_data: Default::default(),
-            inner: value,
-        }
+        Self::Resolved(value)
     }
 }
 
 impl<T: MoveType> From<Argument> for Arg<T> {
     fn from(value: Argument) -> Self {
-        Self {
-            inner: Some(value),
-            data: None,
-        }
-    }
-}
-
-impl<T: MoveType> From<Arg<T>> for Argument {
-    fn from(value: Arg<T>) -> Self {
-        value.inner.unwrap()
-    }
-}
-impl<T: MoveType> From<MutRef<T>> for Argument {
-    fn from(value: MutRef<T>) -> Self {
-        value.inner
-    }
-}
-impl<T: MoveType> From<Ref<T>> for Argument {
-    fn from(value: Ref<T>) -> Self {
-        value.inner
+        Self::Resolved(value)
     }
 }
 
 impl<T: MoveType> From<T> for Arg<T> {
     fn from(value: T) -> Self {
-        Self {
-            // dummy input, need to be resolved later
-            inner: None,
-            data: Some(value),
-        }
+        Self::Raw(value)
     }
 }
 
-impl<T: MoveType + Serialize> Arg<T> {
-    pub fn maybe_resolve_arg(self, builder: &mut TransactionBuilder) -> Self {
-        if self.inner.is_none() {
-            if let Some(data) = &self.data {
-                return Self {
-                    inner: Some(builder.input(Serialized(data))),
-                    data: None,
-                };
-            }
+impl<T> Arg<T> {
+    pub fn resolve_arg(self, builder: &mut TransactionBuilder) -> Self
+    where
+        T: ToInput,
+    {
+        match self {
+            Arg::Raw(value) => Self::Resolved(builder.input(value.to_input())),
+            _ => self
         }
-        self
     }
-
     pub fn borrow(&self) -> Ref<T> {
-        Ref {
-            phantom_data: Default::default(),
-            inner: self.inner.expect("Cannot borrow unresolved Arg."),
+        match self {
+            Arg::Resolved(a) => Ref::Resolved(a.clone()),
+            Arg::Raw(p) => Ref::Raw(p)
         }
     }
 
     pub fn borrow_mut(&mut self) -> MutRef<T> {
-        MutRef {
-            phantom_data: Default::default(),
-            inner: self.inner.expect("Cannot borrow unresolved Arg."),
+        match self {
+            Arg::Resolved(a) => MutRef::Resolved(a.clone()),
+            Arg::Raw(p) => MutRef::Raw(p)
         }
+    }
+}
+
+impl<T> Ref<'_, T> {
+    pub fn resolve_arg(self, builder: &mut TransactionBuilder) -> Self
+    where
+        T: ToInput,
+    {
+        match self {
+            Ref::Raw(value) => Self::Resolved(builder.input(value.to_input())),
+            _ => self
+        }
+    }
+}
+
+
+impl<T> MutRef<'_, T> {
+    pub fn resolve_arg(self, builder: &mut TransactionBuilder) -> Self
+    where
+        T: ToInput,
+    {
+        match self {
+            MutRef::Raw(value) => Self::Resolved(builder.input(value.to_input())),
+            _ => self
+        }
+    }
+}
+impl<T> From<Arg<T>> for Argument {
+    fn from(value: Arg<T>) -> Self {
+        match value {
+            Arg::Resolved(arg) => arg,
+            Arg::Raw(_) => panic!("Cannot use unresolved arg")
+        }
+    }
+}
+impl<T> From<MutRef<'_, T>> for Argument {
+    fn from(value: MutRef<'_, T>) -> Self {
+        match value {
+            MutRef::Resolved(arg) => arg,
+            MutRef::Raw(_) => panic!("Cannot use unresolved arg")
+        }
+    }
+}
+impl<T> From<Ref<'_, T>> for Argument {
+    fn from(value: Ref<'_, T>) -> Self {
+        match value {
+            Ref::Resolved(arg) => arg,
+            Ref::Raw(_) => panic!("Cannot use unresolved arg")
+        }
+    }
+}
+
+pub trait ToInput {
+    fn to_input(&self) -> Input;
+}
+
+impl <T: MoveType + Serialize> ToInput for T{
+    fn to_input(&self) -> Input {
+        Serialized(self).into()
     }
 }

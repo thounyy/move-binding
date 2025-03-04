@@ -8,7 +8,7 @@ use quote::quote;
 use reqwest::header::CONTENT_TYPE;
 use serde::Deserialize;
 use serde_json::{json, Value};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::str::FromStr;
 use sui_sdk_types::{Address, Identifier};
 use syn::parse::{Parse, ParseStream};
@@ -21,23 +21,20 @@ pub fn key_derive(input: TokenStream) -> TokenStream {
 
     let types = extract_type_ident(&ast.generics);
 
-    let gen = if types.is_empty() {
-        quote! {
-            impl move_types::Key for #name {
-                fn id(&self) -> &move_types::ObjectId {
-                    &self.id
-                }
-            }
-        }
-    } else {
-        quote! {
-            impl <#(#types:move_types::MoveType),*> move_types::Key for #name<#(#types),*> {
-                fn id(&self) -> &move_types::ObjectId {
-                    &self.id
-                }
-            }
-        }
+    let (types_with_trait, types) = if types.is_empty(){
+        (quote! {}, quote! {})
+    }else{
+        (quote! {<#(#types:move_types::MoveType),*>}, quote! {<#(#types),*>})
     };
+
+    let gen =
+        quote! {
+            impl #types_with_trait move_types::Key for #name #types {
+                fn id(&self) -> &move_types::ObjectId {
+                    &self.id
+                }
+            }
+        };
     gen.into()
 }
 
@@ -229,7 +226,7 @@ fn resolve_mvr_name(package: String, url: &str) -> Option<Address> {
         .ok()
 }
 
-fn create_structs(structs: &HashMap<String, MoveStruct>) -> Vec<proc_macro2::TokenStream> {
+fn create_structs(structs: &BTreeMap<String, MoveStruct>) -> Vec<proc_macro2::TokenStream> {
     structs
         .iter()
         .map(|(name, move_struct)| create_struct(name, move_struct))
@@ -265,7 +262,6 @@ fn create_struct(struct_name: &str, move_struct: &MoveStruct) -> proc_macro2::To
         quote! {serde::Serialize},
         quote! {Debug},
         quote! {MoveStruct},
-        quote! {Clone},
     ];
 
     if move_struct.abilities.has_key() {
@@ -290,34 +286,33 @@ fn create_struct(struct_name: &str, move_struct: &MoveStruct) -> proc_macro2::To
     }
 }
 
-fn create_funs(funs: &HashMap<String, MoveFunction>) -> Vec<proc_macro2::TokenStream> {
+fn create_funs(funs: &BTreeMap<String, MoveFunction>) -> Vec<proc_macro2::TokenStream> {
     funs.iter()
         .flat_map(|(name, fun)| create_fun(name, fun))
         .collect()
 }
 
 fn create_fun(fun_name: &str, fun: &MoveFunction) -> Option<proc_macro2::TokenStream> {
-    let (param_names, mut params, non_ref_args) = fun.parameters
+    let (param_names, mut params, need_lifetime) = fun.parameters
         .iter()
         .enumerate()
-        .fold((vec![], vec![], vec![]), |(mut param_names, mut params, mut non_ref_args), (i, move_type)| {
+        .fold((vec![], vec![], false), |(mut param_names, mut params, mut lifetime), (i, move_type)| {
             let field_ident = Ident::new(&format!("p{i}"), proc_macro2::Span::call_site());
+            lifetime = lifetime || move_type.is_ref();
             match &move_type {
                 MoveType::Reference(r) |
                 MoveType::MutableReference(r) => {
                     // filter out TxContext
                     if matches!(&**r, MoveType::Struct{address, name, ..} if address == &Address::TWO && name.as_str() == "TxContext") {
-                        return (param_names, params, non_ref_args);
+                        return (param_names, params, lifetime);
                     }
                 }
-                _ => {
-                    non_ref_args.push(quote! {#field_ident})
-                }
+                _ => {}
             }
             param_names.push(quote! {#field_ident});
             let field_type: syn::Type = syn::parse_str(&move_type.to_arg_type()).unwrap();
             params.push(quote! {#field_ident: #field_type});
-            (param_names, params, non_ref_args)
+            (param_names, params, lifetime)
         });
     params.insert(
         0,
@@ -330,19 +325,25 @@ fn create_fun(fun_name: &str, fun: &MoveFunction) -> Option<proc_macro2::TokenSt
         .flat_map(|move_type| syn::parse_str::<syn::Type>(&move_type.to_arg_type()).ok())
         .collect::<Vec<_>>();
 
-    let (types, types_with_ability) = fun.type_parameters.iter().enumerate().fold(
+    let (types, mut types_with_ability) = fun.type_parameters.iter().enumerate().fold(
         (vec![], vec![]),
         |(mut types, mut types_with_ability), (i, v)| {
             let ident = Ident::new(&format!("T{i}"), proc_macro2::Span::call_site());
             types.push(ident.clone());
-            let mut abilities = vec![quote! {MoveType}, quote! {serde::Serialize}];
+            let mut abilities = vec![];
             if v.has_key() {
                 abilities.push(quote! {move_types::Key});
+            }else{
+                abilities.push(quote! {MoveType});
             }
             types_with_ability.push(quote! {#ident: #(#abilities)+*});
             (types, types_with_ability)
         },
     );
+
+    if need_lifetime || fun.return_.iter().any(|t| t.is_ref()) {
+        types_with_ability.insert(0, quote! {'a})
+    }
 
     let fun_ident = Ident::new(fun_name, proc_macro2::Span::call_site());
 
@@ -352,7 +353,7 @@ fn create_fun(fun_name: &str, fun: &MoveFunction) -> Option<proc_macro2::TokenSt
         (quote! {}, quote! {;})
     };
 
-    let sig = if types.is_empty() {
+    let sig = if types_with_ability.is_empty() {
         quote! {
             pub fn #fun_ident(#(#params),*) #maybe_returns
         }
@@ -364,7 +365,7 @@ fn create_fun(fun_name: &str, fun: &MoveFunction) -> Option<proc_macro2::TokenSt
 
     let fun_impl = quote! {
         #sig {
-            #(let #non_ref_args = #non_ref_args.maybe_resolve_arg(builder);)*
+            #(let #param_names = #param_names.resolve_arg(builder);)*
             builder.move_call(
                 sui_transaction_builder::Function::new(
                     PACKAGE_ID,
@@ -460,13 +461,21 @@ impl MoveType {
         }
     }
 
+    fn is_ref(&self) -> bool {
+        match self {
+            MoveType::Reference(_) |
+            MoveType::MutableReference(_) => true,
+            _ => false
+        }
+    }
+
     fn to_arg_type(&self) -> String {
         match self {
             MoveType::Reference(t) => {
-                format!("Ref<{}>", t.to_rust_type())
+                format!("Ref<'a, {}>", t.to_rust_type())
             }
             MoveType::MutableReference(t) => {
-                format!("MutRef<{}>", t.to_rust_type())
+                format!("MutRef<'a, {}>", t.to_rust_type())
             }
             _ => format!("Arg<{}>", self.to_rust_type()),
         }

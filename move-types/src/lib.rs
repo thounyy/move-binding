@@ -1,12 +1,15 @@
 pub mod functions;
 
 pub use primitive_types::U256;
+use serde::Serialize;
 use std::str::FromStr;
 pub use sui_sdk_types::Address;
 pub use sui_sdk_types::Identifier;
 pub use sui_sdk_types::ObjectId;
 pub use sui_sdk_types::StructTag;
 pub use sui_sdk_types::TypeTag;
+use sui_transaction_builder::unresolved::Input;
+use crate::functions::ToInput;
 
 pub const MOVE_STDLIB: Address = {
     let mut address = [0u8; 32];
@@ -14,11 +17,11 @@ pub const MOVE_STDLIB: Address = {
     Address::new(address)
 };
 
-pub trait MoveType {
+pub trait MoveType: Serialize {
     fn type_() -> TypeTag;
 }
 
-pub trait MoveStruct {
+pub trait MoveStruct: Serialize {
     fn struct_type() -> StructTag;
 }
 
@@ -96,12 +99,7 @@ impl MoveType for String {
 
 impl MoveType for &str {
     fn type_() -> TypeTag {
-        TypeTag::Struct(Box::new(StructTag {
-            address: MOVE_STDLIB,
-            module: Identifier::from_str("string").unwrap(),
-            name: Identifier::from_str("String").unwrap(),
-            type_params: vec![],
-        }))
+        String::type_()
     }
 }
 
@@ -122,6 +120,6 @@ impl<T: MoveType> MoveType for Vec<T> {
     }
 }
 
-pub trait Key {
+pub trait Key: MoveStruct {
     fn id(&self) -> &ObjectId;
 }

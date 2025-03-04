@@ -2,11 +2,11 @@ use crate::{MoveType, SuiNetwork};
 use reqwest::header::CONTENT_TYPE;
 use serde::Deserialize;
 use serde_json::Value;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use sui_sdk_types::Address;
 
 pub trait ModuleProvider {
-    fn get_modules(&self, package_id: Address) -> HashMap<String, MoveModule>;
+    fn get_modules(&self, package_id: Address) -> BTreeMap<String, MoveModule>;
 }
 
 pub struct RPCModuleProvider {
@@ -20,7 +20,7 @@ impl RPCModuleProvider {
 }
 
 impl ModuleProvider for RPCModuleProvider {
-    fn get_modules(&self, package_id: Address) -> HashMap<String, MoveModule> {
+    fn get_modules(&self, package_id: Address) -> BTreeMap<String, MoveModule> {
         let client = reqwest::blocking::Client::new();
         let res = client
             .post(self.network.rpc())
@@ -48,9 +48,9 @@ impl ModuleProvider for RPCModuleProvider {
 
 #[derive(Deserialize)]
 pub struct MoveModule {
-    pub structs: HashMap<String, MoveStruct>,
+    pub structs: BTreeMap<String, MoveStruct>,
     #[serde(alias = "exposedFunctions")]
-    pub exposed_functions: HashMap<String, MoveFunction>,
+    pub exposed_functions: BTreeMap<String, MoveFunction>,
     pub address: Address,
 }
 

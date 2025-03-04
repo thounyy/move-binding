@@ -17,7 +17,7 @@ move_contract! {alias = "mvr_metadata", package = "@mvr/metadata", deps = [crate
 move_contract! {alias = "suins", package = "0xd22b24490e0bae52676651b4f56660a5ff8022a2576e0089f79b3c88d44e08f0", deps = [crate::sui]}
 move_contract! {alias = "mvr_core", package = "@mvr/core", deps = [crate::sui, crate::suins, crate::mvr_metadata]}
 
-move_contract! {alias = "mvr_metadata_testnet", package = "@mvr/metadata", network = "testnet", deps = [crate::sui]}
+//move_contract! {alias = "mvr_metadata_testnet", package = "@mvr/metadata", network = "testnet", deps = [crate::sui]}
 
 #[tokio::test]
 pub async fn test_deserialize_object() {
@@ -27,7 +27,7 @@ pub async fn test_deserialize_object() {
             Address::from_str(
                 "0x00ba8458097a879607d609817a05599dc3e9e73ce942f97d4f1262605a8bf0fc".into(),
             )
-            .unwrap(),
+                .unwrap(),
             None,
         )
         .await
@@ -62,11 +62,14 @@ pub async fn test_function_call() {
     builder.set_gas_price(1000);
 
     let mut new_bag = sui::bag::new(&mut builder);
+
+    let option = move_lib::option::some(&mut builder, "Test".into());
+
     sui::bag::add(
         &mut builder,
         new_bag.borrow_mut(),
         "Test".into(),
-        "Test_value".into(),
+        option,
     );
     sui::bag::add(
         &mut builder,
@@ -78,6 +81,7 @@ pub async fn test_function_call() {
 
     let tx = builder.finish().unwrap();
     let result = client.dry_run_tx(&tx, None).await.unwrap();
+
 
     println!("{:?}", result);
 }
