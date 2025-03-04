@@ -8,8 +8,6 @@ pub use sui_sdk_types::Identifier;
 pub use sui_sdk_types::ObjectId;
 pub use sui_sdk_types::StructTag;
 pub use sui_sdk_types::TypeTag;
-use sui_transaction_builder::unresolved::Input;
-use crate::functions::ToInput;
 
 pub const MOVE_STDLIB: Address = {
     let mut address = [0u8; 32];
