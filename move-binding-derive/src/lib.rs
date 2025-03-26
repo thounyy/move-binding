@@ -1,16 +1,17 @@
 mod package_provider;
-use crate::package_provider::{ModuleProvider, MoveFunction, MoveStruct, RPCModuleProvider};
+use crate::package_provider::{ModuleProvider, MoveModuleProvider};
 use itertools::Itertools;
-use move_types::MOVE_STDLIB;
+use move_binary_format::normalized::{Function, Struct, Type};
+use move_core_types::account_address::AccountAddress;
+use move_core_types::identifier::Identifier;
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
 use quote::quote;
 use reqwest::header::CONTENT_TYPE;
-use serde::Deserialize;
 use serde_json::{json, Value};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
-use sui_sdk_types::{Address, Identifier};
+use sui_sdk_types::Address;
 use syn::parse::{Parse, ParseStream};
 use syn::{parse_macro_input, DeriveInput, ExprArray, GenericParam, Generics, LitStr, Path, Token};
 
@@ -21,20 +22,22 @@ pub fn key_derive(input: TokenStream) -> TokenStream {
 
     let types = extract_type_ident(&ast.generics);
 
-    let (types_with_trait, types) = if types.is_empty(){
+    let (types_with_trait, types) = if types.is_empty() {
         (quote! {}, quote! {})
-    }else{
-        (quote! {<#(#types:move_types::MoveType),*>}, quote! {<#(#types),*>})
+    } else {
+        (
+            quote! {<#(#types:move_types::MoveType),*>},
+            quote! {<#(#types),*>},
+        )
     };
 
-    let gen =
-        quote! {
-            impl #types_with_trait move_types::Key for #name #types {
-                fn id(&self) -> &move_types::ObjectId {
-                    &self.id
-                }
+    let gen = quote! {
+        impl #types_with_trait move_types::Key for #name #types {
+            fn id(&self) -> &move_types::ObjectId {
+                &self.id
             }
-        };
+        }
+    };
     gen.into()
 }
 
@@ -65,7 +68,7 @@ pub fn move_struct_derive(input: TokenStream) -> TokenStream {
             impl move_types::MoveStruct for #name {
                 fn struct_type() -> move_types::StructTag {
                     move_types::StructTag {
-                        address: PACKAGE_ID,
+                        address: Self::TYPE_ORIGIN_ID,
                         module: move_types::Identifier::from_str(MODULE_NAME).unwrap(),
                         name: move_types::Identifier::from_str(#name_str).unwrap(),
                         type_params: vec![],
@@ -78,7 +81,7 @@ pub fn move_struct_derive(input: TokenStream) -> TokenStream {
             impl <#(#types:move_types::MoveType), *> move_types::MoveStruct for #name<#(#types),*> {
                 fn struct_type() -> move_types::StructTag {
                     move_types::StructTag {
-                        address: PACKAGE_ID,
+                        address: Self::TYPE_ORIGIN_ID,
                         module: move_types::Identifier::from_str(MODULE_NAME).unwrap(),
                         name: move_types::Identifier::from_str(#name_str).unwrap(),
                         type_params: vec![#(#types::type_()),*],
@@ -168,22 +171,28 @@ pub fn move_contract(input: TokenStream) -> TokenStream {
         Address::from_str(&package).expect("Error parsing package id.")
     };
 
-    let module_provider = RPCModuleProvider::new(network);
-    let modules = module_provider.get_modules(package_id);
+    let module_provider = MoveModuleProvider::new(network);
+    let package = module_provider.get_package(package_id);
 
-    let module_tokens = modules.iter().map(|(module_name, module)| {
+    let module_tokens = package.module_map.iter().map(|(module_name, module)| {
         let module_ident = Ident::new(module_name, proc_macro2::Span::call_site());
-        let mut struct_fun_tokens = create_structs(&module.structs);
 
-        if !module.exposed_functions.is_empty() {
-            let fun_impl = create_funs(&module.exposed_functions);
+        let type_origin_table = package
+            .type_origin_table
+            .get(module_name)
+            .cloned()
+            .unwrap_or_default();
+        let mut struct_fun_tokens = create_structs(&module.structs, &type_origin_table);
+
+        if !module.functions.is_empty() {
+            let fun_impl = create_funs(&module.functions);
             struct_fun_tokens.extend(fun_impl);
         }
 
         if struct_fun_tokens.is_empty() {
             quote! {}
         } else {
-            let addr_byte_ident = module.address.as_bytes();
+            let addr_byte_ident = module.address.to_vec();
             quote! {
                 pub mod #module_ident{
                     use super::*;
@@ -196,6 +205,7 @@ pub fn move_contract(input: TokenStream) -> TokenStream {
     });
 
     let package_ident = Ident::new(&package_alias, proc_macro2::Span::call_site());
+    let version = package.version;
     let expanded = quote! {
         pub mod #package_ident{
             #(use #deps::*;)*
@@ -203,6 +213,7 @@ pub fn move_contract(input: TokenStream) -> TokenStream {
             use move_binding_derive::{Key, MoveStruct};
             use move_types::{MoveType, Address, Identifier, TypeTag, StructTag};
             use move_types::functions::{Arg, Ref, MutRef};
+            pub const PACKAGE_VERSION:u64 = #version;
             #(#module_tokens)*
         }
     };
@@ -226,14 +237,21 @@ fn resolve_mvr_name(package: String, url: &str) -> Option<Address> {
         .ok()
 }
 
-fn create_structs(structs: &BTreeMap<String, MoveStruct>) -> Vec<proc_macro2::TokenStream> {
+fn create_structs(
+    structs: &BTreeMap<Identifier, Struct>,
+    type_origin_ids: &HashMap<String, AccountAddress>,
+) -> Vec<proc_macro2::TokenStream> {
     structs
         .iter()
-        .map(|(name, move_struct)| create_struct(name, move_struct))
+        .map(|(name, move_struct)| create_struct(name.as_str(), move_struct, type_origin_ids))
         .collect()
 }
 
-fn create_struct(struct_name: &str, move_struct: &MoveStruct) -> proc_macro2::TokenStream {
+fn create_struct(
+    struct_name: &str,
+    move_struct: &Struct,
+    type_origin_id: &HashMap<String, AccountAddress>,
+) -> proc_macro2::TokenStream {
     let (type_parameters, phantoms) = move_struct.type_parameters.iter().enumerate().fold(
         (vec![], vec![]),
         |(mut type_parameters, mut phantoms), (i, v)| {
@@ -250,9 +268,12 @@ fn create_struct(struct_name: &str, move_struct: &MoveStruct) -> proc_macro2::To
         },
     );
 
-    let struct_ident = Ident::new(struct_name, proc_macro2::Span::call_site());
+    let struct_ident = Ident::new(&struct_name.to_string(), proc_macro2::Span::call_site());
     let field_tokens = move_struct.fields.iter().map(|field| {
-        let field_ident = Ident::new(&escape_keyword(&field.name), proc_macro2::Span::call_site());
+        let field_ident = Ident::new(
+            &escape_keyword(field.name.as_str()),
+            proc_macro2::Span::call_site(),
+        );
         let field_type: syn::Type = syn::parse_str(&field.type_.to_rust_type()).unwrap();
         quote! {pub #field_ident: #field_type,}
     });
@@ -268,11 +289,15 @@ fn create_struct(struct_name: &str, move_struct: &MoveStruct) -> proc_macro2::To
         derives.push(quote! {Key});
     }
 
+    let addr_byte_ident = type_origin_id[struct_name].to_vec();
     if type_parameters.is_empty() {
         quote! {
             #[derive(#(#derives),*)]
             pub struct #struct_ident {
                 #(#field_tokens)*
+            }
+            impl #struct_ident{
+                pub const TYPE_ORIGIN_ID: Address = Address::new([#(#addr_byte_ident),*]);
             }
         }
     } else {
@@ -282,17 +307,20 @@ fn create_struct(struct_name: &str, move_struct: &MoveStruct) -> proc_macro2::To
                 #(#field_tokens)*
                 #(#phantoms)*
             }
+            impl <#(#type_parameters),*> #struct_ident<#(#type_parameters),*>{
+                pub const TYPE_ORIGIN_ID: Address = Address::new([#(#addr_byte_ident),*]);
+            }
         }
     }
 }
 
-fn create_funs(funs: &BTreeMap<String, MoveFunction>) -> Vec<proc_macro2::TokenStream> {
+fn create_funs(funs: &BTreeMap<Identifier, Function>) -> Vec<proc_macro2::TokenStream> {
     funs.iter()
-        .flat_map(|(name, fun)| create_fun(name, fun))
+        .flat_map(|(name, fun)| create_fun(name.as_str(), fun))
         .collect()
 }
 
-fn create_fun(fun_name: &str, fun: &MoveFunction) -> Option<proc_macro2::TokenStream> {
+fn create_fun(fun_name: &str, fun: &Function) -> Option<proc_macro2::TokenStream> {
     let (param_names, mut params, need_lifetime) = fun.parameters
         .iter()
         .enumerate()
@@ -300,10 +328,10 @@ fn create_fun(fun_name: &str, fun: &MoveFunction) -> Option<proc_macro2::TokenSt
             let field_ident = Ident::new(&format!("p{i}"), proc_macro2::Span::call_site());
             lifetime = lifetime || move_type.is_ref();
             match &move_type {
-                MoveType::Reference(r) |
-                MoveType::MutableReference(r) => {
+                Type::Reference(r) |
+                Type::MutableReference(r) => {
                     // filter out TxContext
-                    if matches!(&**r, MoveType::Struct{address, name, ..} if address == &Address::TWO && name.as_str() == "TxContext") {
+                    if matches!(&**r, Type::Struct{address, name, ..} if address == &AccountAddress::TWO && name.as_str() == "TxContext") {
                         return (param_names, params, lifetime);
                     }
                 }
@@ -333,7 +361,7 @@ fn create_fun(fun_name: &str, fun: &MoveFunction) -> Option<proc_macro2::TokenSt
             let mut abilities = vec![];
             if v.has_key() {
                 abilities.push(quote! {move_types::Key});
-            }else{
+            } else {
                 abilities.push(quote! {MoveType});
             }
             types_with_ability.push(quote! {#ident: #(#abilities)+*});
@@ -387,13 +415,6 @@ enum SuiNetwork {
 }
 
 impl SuiNetwork {
-    fn rpc(&self) -> &str {
-        match self {
-            SuiNetwork::Mainnet => "https://rpc.mainnet.sui.io:443",
-            SuiNetwork::Testnet => "https://rpc.testnet.sui.io:443",
-        }
-    }
-
     fn gql(&self) -> &str {
         match self {
             SuiNetwork::Mainnet => "https://mvr-rpc.sui-mainnet.mystenlabs.com/graphql",
@@ -411,70 +432,52 @@ fn escape_keyword(name: &str) -> String {
     }
 }
 
-#[derive(Deserialize, Debug)]
-enum MoveType {
-    Bool,
-    U8,
-    U16,
-    U32,
-    U64,
-    U128,
-    U256,
-    Address,
-    Signer,
-    Struct {
-        address: Address,
-        module: Identifier,
-        name: Identifier,
-        #[serde(default, alias = "typeArguments")]
-        type_arguments: Vec<MoveType>,
-    },
-    Vector(Box<MoveType>),
-    Reference(Box<MoveType>),
-    MutableReference(Box<MoveType>),
-    TypeParameter(u16),
+trait ToRustType {
+    fn to_rust_type(&self) -> String;
+    fn is_ref(&self) -> bool;
+    fn to_arg_type(&self) -> String;
+    fn try_resolve_known_types(&self) -> String;
 }
 
-impl MoveType {
+impl ToRustType for Type {
     fn to_rust_type(&self) -> String {
         match self {
-            MoveType::Bool => "bool".to_string(),
-            MoveType::U8 => "u8".to_string(),
-            MoveType::U16 => "u16".to_string(),
-            MoveType::U32 => "u32".to_string(),
-            MoveType::U64 => "u64".to_string(),
-            MoveType::U128 => "u128".to_string(),
-            MoveType::U256 => "move_types::U256".to_string(),
-            MoveType::Address => "Address".to_string(),
-            MoveType::Signer => "Address".to_string(),
-            t @ MoveType::Struct { .. } => t.try_resolve_known_types(),
-            MoveType::Vector(t) => {
+            Self::Bool => "bool".to_string(),
+            Self::U8 => "u8".to_string(),
+            Self::U16 => "u16".to_string(),
+            Self::U32 => "u32".to_string(),
+            Self::U64 => "u64".to_string(),
+            Self::U128 => "u128".to_string(),
+            Self::U256 => "move_types::U256".to_string(),
+            Self::Address => "Address".to_string(),
+            Self::Signer => "Address".to_string(),
+            t @ Self::Struct { .. } => t.try_resolve_known_types(),
+            Self::Vector(t) => {
                 format!("Vec<{}>", t.to_rust_type())
             }
-            MoveType::Reference(t) => {
+            Self::Reference(t) => {
                 format!("&'static {}", t.to_rust_type())
             }
-            MoveType::MutableReference(t) => {
+            Self::MutableReference(t) => {
                 format!("&'static mut {}", t.to_rust_type())
             }
-            MoveType::TypeParameter(index) => format!("T{index}"),
+            Self::TypeParameter(index) => format!("T{index}"),
         }
     }
 
     fn is_ref(&self) -> bool {
         match self {
-            MoveType::Reference(_) |
-            MoveType::MutableReference(_) => true,
-            _ => false
+            Self::Reference(_) | Self::MutableReference(_) => true,
+            _ => false,
         }
     }
 
     fn to_arg_type(&self) -> String {
         match self {
-            MoveType::Reference(t) => {
+            Self::Reference(t) => {
                 format!("Ref<'a, {}>", t.to_rust_type())
             }
-            MoveType::MutableReference(t) => {
+            Self::MutableReference(t) => {
                 format!("MutRef<'a, {}>", t.to_rust_type())
             }
             _ => format!("Arg<{}>", self.to_rust_type()),
@@ -482,7 +485,7 @@ impl MoveType {
     }
 
     fn try_resolve_known_types(&self) -> String {
-        if let MoveType::Struct {
+        if let Self::Struct {
             address,
             module,
             name,
@@ -490,15 +493,15 @@ impl MoveType {
         } = self
         {
             match (address, module.as_str(), name.as_str()) {
-                (&MOVE_STDLIB, "type_name", "TypeName") => "String".to_string(),
-                (&MOVE_STDLIB, "string", "String") => "String".to_string(),
-                (&MOVE_STDLIB, "ascii", "String") => "String".to_string(),
-                (&MOVE_STDLIB, "option", "Option") => {
+                (&AccountAddress::ONE, "type_name", "TypeName") => "String".to_string(),
+                (&AccountAddress::ONE, "string", "String") => "String".to_string(),
+                (&AccountAddress::ONE, "ascii", "String") => "String".to_string(),
+                (&AccountAddress::ONE, "option", "Option") => {
                     format!("Option<{}>", type_arguments[0].to_rust_type())
                 }
 
-                (&Address::TWO, "object", "UID") => "sui_sdk_types::ObjectId".to_string(),
-                (&Address::TWO, "object", "ID") => "sui_sdk_types::ObjectId".to_string(),
+                (&AccountAddress::TWO, "object", "UID") => "sui_sdk_types::ObjectId".to_string(),
+                (&AccountAddress::TWO, "object", "ID") => "sui_sdk_types::ObjectId".to_string(),
                 _ => {
                     if type_arguments.is_empty() {
                         format!("{module}::{name}")

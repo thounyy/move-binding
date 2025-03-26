@@ -1,105 +1,90 @@
-use crate::{MoveType, SuiNetwork};
+use crate::SuiNetwork;
+use fastcrypto::encoding::{Base64, Encoding};
+use move_binary_format::normalized::Module;
+use move_binary_format::CompiledModule;
+use move_core_types::account_address::AccountAddress;
 use reqwest::header::CONTENT_TYPE;
-use serde::Deserialize;
-use serde_json::Value;
-use std::collections::BTreeMap;
+use serde_json::{json, Value};
+use std::collections::{BTreeMap, HashMap};
+use std::str::FromStr;
 use sui_sdk_types::Address;
 
 pub trait ModuleProvider {
-    fn get_modules(&self, package_id: Address) -> BTreeMap<String, MoveModule>;
+    fn get_package(&self, package_id: Address) -> Package;
 }
 
-pub struct RPCModuleProvider {
+pub struct MoveModuleProvider {
     network: SuiNetwork,
 }
 
-impl RPCModuleProvider {
+impl MoveModuleProvider {
     pub fn new(network: SuiNetwork) -> Self {
         Self { network }
     }
 }
 
-impl ModuleProvider for RPCModuleProvider {
-    fn get_modules(&self, package_id: Address) -> BTreeMap<String, MoveModule> {
+impl ModuleProvider for MoveModuleProvider {
+    fn get_package(&self, package_id: Address) -> Package {
         let client = reqwest::blocking::Client::new();
+
+        let request = format!(
+            r#"{{package(address: "{package_id}") {{moduleBcs, typeOrigins{{module, struct, definingId}}, version}}}}"#
+        );
         let res = client
-            .post(self.network.rpc())
+            .post(self.network.gql())
             .header(CONTENT_TYPE, "application/json")
-            .body(format!(
-                r#"
-                {{
-                  "jsonrpc": "2.0",
-                  "id": 1,
-                  "method": "sui_getNormalizedMoveModulesByPackage",
-                  "params": [
-                    "{package_id}"
-                  ]
-                }}
-                "#
-            ))
+            .json(&json!({
+                "query": request,
+                "variables": Value::Null
+            }))
             .send()
-            .unwrap();
+            .ok()
+            .expect("Error fetching package from Sui GQL.");
 
         let value = res.json::<Value>().unwrap();
+        let module_bcs: String =
+            serde_json::from_value(value["data"]["package"]["moduleBcs"].clone()).unwrap();
+        let module_bytes = Base64::decode(&module_bcs).unwrap();
+        let module_map: BTreeMap<String, Vec<u8>> = bcs::from_bytes(&module_bytes).unwrap();
 
-        serde_json::from_value(value["result"].clone()).unwrap()
+        let module_map = module_map
+            .iter()
+            .map(|(name, bytes)| {
+                let module = CompiledModule::deserialize_with_defaults(bytes).unwrap();
+                let normalized = Module::new(&module);
+                (name.clone(), normalized)
+            })
+            .collect();
+
+        let type_origin_table: Vec<Value> =
+            serde_json::from_value(value["data"]["package"]["typeOrigins"].clone()).unwrap();
+
+        let type_origin_table = type_origin_table.iter().fold(
+            HashMap::new(),
+            |mut results: HashMap<String, HashMap<String, AccountAddress>>, v| {
+                let module = v["module"].as_str().unwrap();
+                let struct_ = v["struct"].as_str().unwrap();
+                let defining_id = v["definingId"].as_str().unwrap();
+                results.entry(module.to_string()).or_default().insert(
+                    struct_.to_string(),
+                    AccountAddress::from_str(defining_id).unwrap(),
+                );
+                results
+            },
+        );
+
+        let version = serde_json::from_value(value["data"]["package"]["version"].clone()).unwrap();
+
+        Package {
+            module_map,
+            type_origin_table,
+            version,
+        }
     }
 }
 
-#[derive(Deserialize)]
-pub struct MoveModule {
-    pub structs: BTreeMap<String, MoveStruct>,
-    #[serde(alias = "exposedFunctions")]
-    pub exposed_functions: BTreeMap<String, MoveFunction>,
-    pub address: Address,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct MoveStruct {
-    pub fields: Vec<MoveStructField>,
-    #[serde(alias = "typeParameters")]
-    pub type_parameters: Vec<MoveStructTypeParameter>,
-    pub abilities: MoveAbilities,
-}
-
-#[derive(Deserialize, PartialEq, Debug)]
-pub enum MoveAbility {
-    Key,
-    Copy,
-    Store,
-    Drop,
-}
-
-#[derive(Deserialize, PartialEq, Debug)]
-pub struct MoveAbilities {
-    pub abilities: Vec<MoveAbility>,
-}
-
-impl MoveAbilities {
-    pub fn has_key(&self) -> bool {
-        self.abilities.contains(&MoveAbility::Key)
-    }
-}
-
-#[derive(Deserialize, Debug)]
-pub struct MoveStructField {
-    pub name: String,
-    #[serde(alias = "type")]
-    pub type_: MoveType,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct MoveFunction {
-    pub parameters: Vec<MoveType>,
-    #[serde(alias = "typeParameters")]
-    pub type_parameters: Vec<MoveAbilities>,
-    #[serde(alias = "return")]
-    pub return_: Vec<MoveType>,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct MoveStructTypeParameter {
-    #[serde(default, alias = "isPhantom")]
-    pub is_phantom: bool,
-    //pub constraints: MoveAbilities,
+pub struct Package {
+    pub module_map: BTreeMap<String, Module>,
+    pub type_origin_table: HashMap<String, HashMap<String, AccountAddress>>,
+    pub version: u64,
 }
