@@ -7,8 +7,7 @@ use move_core_types::identifier::Identifier;
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
 use quote::quote;
-use reqwest::header::CONTENT_TYPE;
-use serde_json::{json, Value};
+use serde_json::Value;
 use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
 use sui_sdk_types::Address;
@@ -166,7 +165,7 @@ pub fn move_contract(input: TokenStream) -> TokenStream {
     } = parse_macro_input!(input as MoveContractArgs);
 
     let package_id = if package.contains("@") || package.contains(".sui") {
-        resolve_mvr_name(package, &network.gql()).expect("Cannot resolve mvr name")
+        resolve_mvr_name(package, &network.mvr_endpoint()).expect("Cannot resolve mvr name")
     } else {
         Address::from_str(&package).expect("Error parsing package id.")
     };
@@ -222,19 +221,9 @@ pub fn move_contract(input: TokenStream) -> TokenStream {
 
 fn resolve_mvr_name(package: String, url: &str) -> Option<Address> {
     let client = reqwest::blocking::Client::new();
-    let request = format!(r#"{{packageByName(name:"{package}"){{address}}}}"#);
+    let name = client.get(format!("{url}/v1/resolution/{package}")).send().ok()?;
 
-    let res = client
-        .post(url)
-        .header(CONTENT_TYPE, "application/json")
-        .json(&json!({
-            "query": request,
-            "variables": Value::Null
-        }))
-        .send()
-        .ok()?;
-    serde_json::from_value(res.json::<Value>().ok()?["data"]["packageByName"]["address"].clone())
-        .ok()
+    serde_json::from_value(name.json::<Value>().ok()?["package_id"].clone()).ok()
 }
 
 fn create_structs(
@@ -415,10 +404,16 @@ enum SuiNetwork {
 }
 
 impl SuiNetwork {
+    fn mvr_endpoint(&self) -> &str {
+        match self {
+            SuiNetwork::Mainnet => "https://mainnet.mvr.mystenlabs.com",
+            SuiNetwork::Testnet => "https://testnet.mvr.mystenlabs.com",
+        }
+    }
     fn gql(&self) -> &str {
         match self {
-            SuiNetwork::Mainnet => "https://mvr-rpc.sui-mainnet.mystenlabs.com/graphql",
-            SuiNetwork::Testnet => "https://mvr-rpc.sui-testnet.mystenlabs.com/graphql",
+            SuiNetwork::Mainnet => "https://sui-mainnet.mystenlabs.com/graphql",
+            SuiNetwork::Testnet => "https://sui-testnet.mystenlabs.com/graphql",
         }
     }
 }
