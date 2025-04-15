@@ -110,35 +110,4 @@ async fn test_deserialize_enum() {
     let bytes = bcs::to_bytes(&miss).unwrap();
     let deserialized: history::Record = bcs::from_bytes(&bytes).unwrap();
     println!("Deserialized: {:?}", deserialized);
-
-    // let client = Client::new("https://sui-testnet.mystenlabs.com/graphql").unwrap();
-
-    // let owner = Address::from_str("0x0").unwrap();
-    // let gas =
-    //     ObjectId::from_str("0x036c1be41526a4d38c3e128abfc6f5f46786aa66216a1aff82e05687a0a4d059")
-    //         .unwrap();
-    // let gas = client.object(gas.into(), None).await.unwrap().unwrap();
-
-    // let mut builder = TransactionBuilder::new();
-    // builder.set_sender(owner);
-    // builder.add_gas_objects(vec![Input::owned(
-    //     gas.object_id(),
-    //     gas.version(),
-    //     gas.digest(),
-    // )]);
-    // builder.set_gas_budget(10000000);
-    // builder.set_gas_price(1000);
-
-    // let mut new_history = history::empty(&mut builder);
-    // let attack = history::new_attack(&mut builder, vec![3, 4].into(), vec![1, 5].into());
-
-    // history::add(&mut builder, new_history.borrow_mut(), attack);
-
-    // let dodged = history::new_dodged(&mut builder);
-    // history::add(&mut builder, new_history.borrow_mut(), dodged);
-
-    // let tx = builder.finish().unwrap();
-    // let result = client.dry_run_tx(&tx, None).await.unwrap();
-
-    // println!("Result: {:?}", result);
 }
