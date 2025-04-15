@@ -23,6 +23,8 @@ move_contract! {alias = "deepbook", package = "@deepbook/core", deps = [crate::s
 
 //move_contract! {alias = "mvr_metadata_testnet", package = "@mvr/metadata", network = "testnet", deps = [crate::sui]}
 
+move_contract! {alias = "commander", package = "0xdc931e30acc15dbc7fcbd39cd385a03894a7236761490ff4d5b9dbf51af3ce26", network="testnet", deps = [crate::sui, crate::sui_system]}
+
 #[tokio::test]
 pub async fn test_deserialize_object() {
     let client = Client::new("https://sui-mainnet.mystenlabs.com/graphql").unwrap();
@@ -82,4 +84,61 @@ pub async fn test_function_call() {
     let result = client.dry_run_tx(&tx, None).await.unwrap();
 
     println!("{:?}", result);
+}
+
+#[tokio::test]
+async fn test_deserialize_enum() {
+    use commander::history;
+
+    // Struct Variant
+    let attack = history::Record::Attack {
+        origin: vec![1, 1],
+        target: vec![2, 7],
+    };
+    let bytes = bcs::to_bytes(&attack).unwrap();
+    let deserialized: history::Record = bcs::from_bytes(&bytes).unwrap();
+    println!("Deserialized: {:?}", deserialized);
+
+    // Tuple variant
+    let reload = history::Record::Reload(vec![4, 7, 8, 22]);
+    let bytes = bcs::to_bytes(&reload).unwrap();
+    let deserialized: history::Record = bcs::from_bytes(&bytes).unwrap();
+    println!("Deserialized: {:?}", deserialized);
+
+    // Unit variant
+    let miss = history::Record::Miss;
+    let bytes = bcs::to_bytes(&miss).unwrap();
+    let deserialized: history::Record = bcs::from_bytes(&bytes).unwrap();
+    println!("Deserialized: {:?}", deserialized);
+
+    // let client = Client::new("https://sui-testnet.mystenlabs.com/graphql").unwrap();
+
+    // let owner = Address::from_str("0x0").unwrap();
+    // let gas =
+    //     ObjectId::from_str("0x036c1be41526a4d38c3e128abfc6f5f46786aa66216a1aff82e05687a0a4d059")
+    //         .unwrap();
+    // let gas = client.object(gas.into(), None).await.unwrap().unwrap();
+
+    // let mut builder = TransactionBuilder::new();
+    // builder.set_sender(owner);
+    // builder.add_gas_objects(vec![Input::owned(
+    //     gas.object_id(),
+    //     gas.version(),
+    //     gas.digest(),
+    // )]);
+    // builder.set_gas_budget(10000000);
+    // builder.set_gas_price(1000);
+
+    // let mut new_history = history::empty(&mut builder);
+    // let attack = history::new_attack(&mut builder, vec![3, 4].into(), vec![1, 5].into());
+
+    // history::add(&mut builder, new_history.borrow_mut(), attack);
+
+    // let dodged = history::new_dodged(&mut builder);
+    // history::add(&mut builder, new_history.borrow_mut(), dodged);
+
+    // let tx = builder.finish().unwrap();
+    // let result = client.dry_run_tx(&tx, None).await.unwrap();
+
+    // println!("Result: {:?}", result);
 }
