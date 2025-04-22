@@ -1,7 +1,7 @@
 mod package_provider;
 use crate::package_provider::{ModuleProvider, MoveModuleProvider};
 use itertools::Itertools;
-use move_binary_format::normalized::{Function, Struct, Type};
+use move_binary_format::normalized::{Enum, Function, Struct, Type};
 use move_core_types::account_address::AccountAddress;
 use move_core_types::identifier::Identifier;
 use proc_macro::TokenStream;
@@ -183,6 +183,11 @@ pub fn move_contract(input: TokenStream) -> TokenStream {
             .unwrap_or_default();
         let mut struct_fun_tokens = create_structs(&module.structs, &type_origin_table);
 
+        if !module.enums.is_empty() {
+            let enum_tokens = create_enums(&module.enums, &type_origin_table);
+            struct_fun_tokens.extend(enum_tokens);
+        }
+
         if !module.functions.is_empty() {
             let fun_impl = create_funs(&module.functions);
             struct_fun_tokens.extend(fun_impl);
@@ -221,7 +226,10 @@ pub fn move_contract(input: TokenStream) -> TokenStream {
 
 fn resolve_mvr_name(package: String, url: &str) -> Option<Address> {
     let client = reqwest::blocking::Client::new();
-    let name = client.get(format!("{url}/v1/resolution/{package}")).send().ok()?;
+    let name = client
+        .get(format!("{url}/v1/resolution/{package}"))
+        .send()
+        .ok()?;
 
     serde_json::from_value(name.json::<Value>().ok()?["package_id"].clone()).ok()
 }
@@ -299,6 +307,80 @@ fn create_struct(
             impl <#(#type_parameters),*> #struct_ident<#(#type_parameters),*>{
                 pub const TYPE_ORIGIN_ID: Address = Address::new([#(#addr_byte_ident),*]);
             }
+        }
+    }
+}
+
+fn create_enums(
+    enums: &BTreeMap<Identifier, Enum>,
+    type_origin_ids: &HashMap<String, AccountAddress>,
+) -> Vec<proc_macro2::TokenStream> {
+    enums
+        .iter()
+        .map(|(name, move_enum)| create_enum(name.as_str(), move_enum, type_origin_ids))
+        .collect()
+}
+
+fn create_enum(
+    enum_name: &str,
+    move_enum: &Enum,
+    type_origin_id: &HashMap<String, AccountAddress>,
+) -> proc_macro2::TokenStream {
+    let enum_ident = Ident::new(&enum_name.to_string(), proc_macro2::Span::call_site());
+    let variant_tokens = move_enum.variants.iter().map(|variant| {
+        let variant_ident = Ident::new(
+            &escape_keyword(variant.name.as_str()),
+            proc_macro2::Span::call_site(),
+        );
+
+        if variant.fields.is_empty() {
+            return quote! {#variant_ident,};
+        }
+
+        if variant
+            .fields
+            .iter()
+            .enumerate()
+            .all(|(i, field)| field.name.to_string() == format!("pos{}", i))
+        {
+            let field_types = variant.fields.iter().map(|field| {
+                let field_type: syn::Type = syn::parse_str(&field.type_.to_rust_type()).unwrap();
+                quote! {#field_type,}
+            });
+
+            return quote! {
+                #variant_ident(#(#field_types)*),
+            };
+        }
+
+        let field_tokens = variant.fields.iter().map(|field| {
+            let field_ident = Ident::new(
+                &escape_keyword(field.name.as_str()),
+                proc_macro2::Span::call_site(),
+            );
+            let field_type: syn::Type = syn::parse_str(&field.type_.to_rust_type()).unwrap();
+            quote! {#field_ident: #field_type,}
+        });
+        quote! { #variant_ident {#(#field_tokens)*},}
+    });
+
+    let derives = vec![
+        quote! {serde::Deserialize},
+        quote! {serde::Serialize},
+        quote! {Debug},
+        quote! {MoveStruct},
+    ];
+
+    let addr_byte_ident = type_origin_id[enum_name].to_vec();
+
+    quote! {
+        #[derive(#(#derives),*)]
+        pub enum #enum_ident{
+            #(#variant_tokens)*
+        }
+
+        impl #enum_ident{
+            pub const TYPE_ORIGIN_ID: Address = Address::new([#(#addr_byte_ident),*]);
         }
     }
 }
