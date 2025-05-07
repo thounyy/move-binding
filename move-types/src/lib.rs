@@ -1,6 +1,6 @@
 pub mod functions;
 
-pub use primitive_types::U256;
+pub use move_core_types::u256::U256;
 use serde::Serialize;
 use std::str::FromStr;
 pub use sui_sdk_types::Address;

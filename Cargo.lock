@@ -1765,7 +1765,6 @@ name = "move-types"
 version = "0.1.0"
 dependencies = [
  "move-core-types",
- "primitive-types",
  "serde",
  "sui-sdk-types",
  "sui-transaction-builder",
