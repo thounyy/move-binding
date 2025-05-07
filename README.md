@@ -1,6 +1,11 @@
 # Move Binding
 
-Move Binding is a Rust library that provides a way to interact with Sui Move packages on-chain. It reads Move packages from the Sui blockchain and generates corresponding Rust structs and function entry points, allowing for seamless integration between Move and Rust.
+Move Binding is a Rust library that provides a way to interact with Sui Move packages on-chain. It reads Move packages from the Sui blockchain and generates corresponding Rust structs and function entry points, allowing for seamless integration between Move and Rust. 
+
+> ⚠️ **Disclaimer**  
+> This library is experimental and may not be actively maintained or fully supported by Mysten Labs.  
+> Developers should be aware that features may change without notice, and community or official support could be limited.  
+> **Use at your own risk**, and thoroughly test any integration in your own development environment before relying on it in production systems.
 
 ## Features
 - Reads Sui Move packages directly from the Sui blockchain.
