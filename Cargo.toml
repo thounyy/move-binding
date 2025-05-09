@@ -3,6 +3,7 @@ resolver = "2"
 
 members = [
     "move-types",
+    "move-binding",
     "move-binding-derive"
 ]
 
