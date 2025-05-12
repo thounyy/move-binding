@@ -1,4 +1,5 @@
 use crate::package_id_resolver::PackageIdResolver;
+use crate::SuiNetwork;
 use fastcrypto::encoding::{Base64, Encoding};
 use move_binary_format::normalized::Module;
 use move_binary_format::CompiledModule;
@@ -7,7 +8,6 @@ use reqwest::header::CONTENT_TYPE;
 use serde_json::{json, Value};
 use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
-use crate::SuiNetwork;
 
 pub trait ModuleProvider {
     fn get_package(&self, package_id: &str) -> Result<Package, anyhow::Error>;

@@ -3,13 +3,12 @@ source: move-binding/tests/snapshot_tests.rs
 expression: pretty
 ---
 pub mod bridge {
-    use std::str::FromStr;
-    use move_binding_derive::{Key, MoveStruct};
-    use move_types::{MoveType, Address, Identifier, TypeTag, StructTag};
-    use move_types::functions::{Arg, Ref, MutRef};
     pub const PACKAGE_VERSION: u64 = 5u64;
     pub mod bridge {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -18,8 +17,8 @@ pub mod bridge {
         pub const MODULE_NAME: &str = "bridge";
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct, Key)]
         pub struct Bridge {
-            pub id: sui_sdk_types::ObjectId,
-            pub inner: versioned::Versioned,
+            pub id: ObjectId,
+            pub inner: crate::sui::versioned::Versioned,
         }
         impl Bridge {
             pub const TYPE_ORIGIN_ID: Address = Address::new([
@@ -33,14 +32,14 @@ pub mod bridge {
             pub bridge_version: u64,
             pub message_version: u8,
             pub chain_id: u8,
-            pub sequence_nums: vec_map::VecMap<u8, u64>,
-            pub committee: committee::BridgeCommittee,
-            pub treasury: treasury::BridgeTreasury,
-            pub token_transfer_records: linked_table::LinkedTable<
-                message::BridgeMessageKey,
-                bridge::BridgeRecord,
+            pub sequence_nums: crate::sui::vec_map::VecMap<u8, u64>,
+            pub committee: crate::bridge::committee::BridgeCommittee,
+            pub treasury: crate::bridge::treasury::BridgeTreasury,
+            pub token_transfer_records: crate::sui::linked_table::LinkedTable<
+                crate::bridge::message::BridgeMessageKey,
+                crate::bridge::bridge::BridgeRecord,
             >,
-            pub limiter: limiter::TransferLimiter,
+            pub limiter: crate::bridge::limiter::TransferLimiter,
             pub paused: bool,
         }
         impl BridgeInner {
@@ -52,7 +51,7 @@ pub mod bridge {
         }
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct)]
         pub struct BridgeRecord {
-            pub message: message::BridgeMessage,
+            pub message: crate::bridge::message::BridgeMessage,
             pub verified_signatures: Option<Vec<Vec<u8>>>,
             pub claimed: bool,
         }
@@ -93,7 +92,7 @@ pub mod bridge {
         }
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct)]
         pub struct TokenTransferAlreadyApproved {
-            pub message_key: message::BridgeMessageKey,
+            pub message_key: crate::bridge::message::BridgeMessageKey,
         }
         impl TokenTransferAlreadyApproved {
             pub const TYPE_ORIGIN_ID: Address = Address::new([
@@ -104,7 +103,7 @@ pub mod bridge {
         }
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct)]
         pub struct TokenTransferAlreadyClaimed {
-            pub message_key: message::BridgeMessageKey,
+            pub message_key: crate::bridge::message::BridgeMessageKey,
         }
         impl TokenTransferAlreadyClaimed {
             pub const TYPE_ORIGIN_ID: Address = Address::new([
@@ -115,7 +114,7 @@ pub mod bridge {
         }
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct)]
         pub struct TokenTransferApproved {
-            pub message_key: message::BridgeMessageKey,
+            pub message_key: crate::bridge::message::BridgeMessageKey,
         }
         impl TokenTransferApproved {
             pub const TYPE_ORIGIN_ID: Address = Address::new([
@@ -126,7 +125,7 @@ pub mod bridge {
         }
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct)]
         pub struct TokenTransferClaimed {
-            pub message_key: message::BridgeMessageKey,
+            pub message_key: crate::bridge::message::BridgeMessageKey,
         }
         impl TokenTransferClaimed {
             pub const TYPE_ORIGIN_ID: Address = Address::new([
@@ -137,7 +136,7 @@ pub mod bridge {
         }
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct)]
         pub struct TokenTransferLimitExceed {
-            pub message_key: message::BridgeMessageKey,
+            pub message_key: crate::bridge::message::BridgeMessageKey,
         }
         impl TokenTransferLimitExceed {
             pub const TYPE_ORIGIN_ID: Address = Address::new([
@@ -148,8 +147,8 @@ pub mod bridge {
         }
         pub fn approve_token_transfer<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, bridge::Bridge>,
-            p1: Arg<message::BridgeMessage>,
+            p0: MutRef<'a, crate::bridge::bridge::Bridge>,
+            p1: Arg<crate::bridge::message::BridgeMessage>,
             p2: Arg<Vec<Vec<u8>>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -168,8 +167,8 @@ pub mod bridge {
         }
         pub fn claim_and_transfer_token<'a, T0: MoveType>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, bridge::Bridge>,
-            p1: Ref<'a, clock::Clock>,
+            p0: MutRef<'a, crate::bridge::bridge::Bridge>,
+            p1: Ref<'a, crate::sui::clock::Clock>,
             p2: Arg<u8>,
             p3: Arg<u64>,
         ) {
@@ -190,11 +189,11 @@ pub mod bridge {
         }
         pub fn claim_token<'a, T0: MoveType>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, bridge::Bridge>,
-            p1: Ref<'a, clock::Clock>,
+            p0: MutRef<'a, crate::bridge::bridge::Bridge>,
+            p1: Ref<'a, crate::sui::clock::Clock>,
             p2: Arg<u8>,
             p3: Arg<u64>,
-        ) -> Arg<coin::Coin<T0>> {
+        ) -> Arg<crate::sui::coin::Coin<T0>> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -213,11 +212,11 @@ pub mod bridge {
         }
         pub fn claim_token_internal<'a, T0: MoveType>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, bridge::Bridge>,
-            p1: Ref<'a, clock::Clock>,
+            p0: MutRef<'a, crate::bridge::bridge::Bridge>,
+            p1: Ref<'a, crate::sui::clock::Clock>,
             p2: Arg<u8>,
             p3: Arg<u64>,
-        ) -> Arg<Option<coin::Coin<T0>>> {
+        ) -> Arg<Option<crate::sui::coin::Coin<T0>>> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -236,8 +235,8 @@ pub mod bridge {
         }
         pub fn committee_registration<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, bridge::Bridge>,
-            p1: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::bridge::bridge::Bridge>,
+            p1: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
             p2: Arg<Vec<u8>>,
             p3: Arg<Vec<u8>>,
         ) {
@@ -258,7 +257,7 @@ pub mod bridge {
         }
         pub fn create<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<sui_sdk_types::ObjectId>,
+            p0: Arg<ObjectId>,
             p1: Arg<u8>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -276,8 +275,8 @@ pub mod bridge {
         }
         pub fn execute_add_tokens_on_sui<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, bridge::BridgeInner>,
-            p1: Arg<message::AddTokenOnSui>,
+            p0: MutRef<'a, crate::bridge::bridge::BridgeInner>,
+            p1: Arg<crate::bridge::message::AddTokenOnSui>,
         ) {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -294,8 +293,8 @@ pub mod bridge {
         }
         pub fn execute_emergency_op<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, bridge::BridgeInner>,
-            p1: Arg<message::EmergencyOp>,
+            p0: MutRef<'a, crate::bridge::bridge::BridgeInner>,
+            p1: Arg<crate::bridge::message::EmergencyOp>,
         ) {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -312,8 +311,8 @@ pub mod bridge {
         }
         pub fn execute_system_message<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, bridge::Bridge>,
-            p1: Arg<message::BridgeMessage>,
+            p0: MutRef<'a, crate::bridge::bridge::Bridge>,
+            p1: Arg<crate::bridge::message::BridgeMessage>,
             p2: Arg<Vec<Vec<u8>>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -332,8 +331,8 @@ pub mod bridge {
         }
         pub fn execute_update_asset_price<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, bridge::BridgeInner>,
-            p1: Arg<message::UpdateAssetPrice>,
+            p0: MutRef<'a, crate::bridge::bridge::BridgeInner>,
+            p1: Arg<crate::bridge::message::UpdateAssetPrice>,
         ) {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -350,8 +349,8 @@ pub mod bridge {
         }
         pub fn execute_update_bridge_limit<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, bridge::BridgeInner>,
-            p1: Arg<message::UpdateBridgeLimit>,
+            p0: MutRef<'a, crate::bridge::bridge::BridgeInner>,
+            p1: Arg<crate::bridge::message::UpdateBridgeLimit>,
         ) {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -368,7 +367,7 @@ pub mod bridge {
         }
         pub fn get_current_seq_num_and_increment<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, bridge::BridgeInner>,
+            p0: MutRef<'a, crate::bridge::bridge::BridgeInner>,
             p1: Arg<u8>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
@@ -388,10 +387,10 @@ pub mod bridge {
         }
         pub fn get_parsed_token_transfer_message<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, bridge::Bridge>,
+            p0: Ref<'a, crate::bridge::bridge::Bridge>,
             p1: Arg<u8>,
             p2: Arg<u64>,
-        ) -> Arg<Option<message::ParsedTokenTransferMessage>> {
+        ) -> Arg<Option<crate::bridge::message::ParsedTokenTransferMessage>> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -410,7 +409,7 @@ pub mod bridge {
         }
         pub fn get_token_transfer_action_signatures<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, bridge::Bridge>,
+            p0: Ref<'a, crate::bridge::bridge::Bridge>,
             p1: Arg<u8>,
             p2: Arg<u64>,
         ) -> Arg<Option<Vec<Vec<u8>>>> {
@@ -432,7 +431,7 @@ pub mod bridge {
         }
         pub fn get_token_transfer_action_status<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, bridge::Bridge>,
+            p0: Ref<'a, crate::bridge::bridge::Bridge>,
             p1: Arg<u8>,
             p2: Arg<u64>,
         ) -> Arg<u8> {
@@ -454,8 +453,8 @@ pub mod bridge {
         }
         pub fn init_bridge_committee<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, bridge::Bridge>,
-            p1: Arg<vec_map::VecMap<Address, u64>>,
+            p0: MutRef<'a, crate::bridge::bridge::Bridge>,
+            p1: Arg<crate::sui::vec_map::VecMap<Address, u64>>,
             p2: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -474,8 +473,8 @@ pub mod bridge {
         }
         pub fn load_inner<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, bridge::Bridge>,
-        ) -> Ref<'a, bridge::BridgeInner> {
+            p0: Ref<'a, crate::bridge::bridge::Bridge>,
+        ) -> Ref<'a, crate::bridge::bridge::BridgeInner> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -491,8 +490,8 @@ pub mod bridge {
         }
         pub fn load_inner_mut<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, bridge::Bridge>,
-        ) -> MutRef<'a, bridge::BridgeInner> {
+            p0: MutRef<'a, crate::bridge::bridge::Bridge>,
+        ) -> MutRef<'a, crate::bridge::bridge::BridgeInner> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -508,10 +507,10 @@ pub mod bridge {
         }
         pub fn register_foreign_token<'a, T0: MoveType>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, bridge::Bridge>,
-            p1: Arg<coin::TreasuryCap<T0>>,
-            p2: Arg<package::UpgradeCap>,
-            p3: Ref<'a, coin::CoinMetadata<T0>>,
+            p0: MutRef<'a, crate::bridge::bridge::Bridge>,
+            p1: Arg<crate::sui::coin::TreasuryCap<T0>>,
+            p2: Arg<crate::sui::package::UpgradeCap>,
+            p3: Ref<'a, crate::sui::coin::CoinMetadata<T0>>,
         ) {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -530,10 +529,10 @@ pub mod bridge {
         }
         pub fn send_token<'a, T0: MoveType>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, bridge::Bridge>,
+            p0: MutRef<'a, crate::bridge::bridge::Bridge>,
             p1: Arg<u8>,
             p2: Arg<Vec<u8>>,
-            p3: Arg<coin::Coin<T0>>,
+            p3: Arg<crate::sui::coin::Coin<T0>>,
         ) {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -552,7 +551,7 @@ pub mod bridge {
         }
         pub fn update_node_url<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, bridge::Bridge>,
+            p0: MutRef<'a, crate::bridge::bridge::Bridge>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -570,7 +569,10 @@ pub mod bridge {
         }
     }
     pub mod chain_ids {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -654,7 +656,7 @@ pub mod bridge {
             builder: &mut sui_transaction_builder::TransactionBuilder,
             p0: Arg<u8>,
             p1: Arg<u8>,
-        ) -> Arg<chain_ids::BridgeRoute> {
+        ) -> Arg<crate::bridge::chain_ids::BridgeRoute> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -690,7 +692,7 @@ pub mod bridge {
         }
         pub fn route_destination<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, chain_ids::BridgeRoute>,
+            p0: Ref<'a, crate::bridge::chain_ids::BridgeRoute>,
         ) -> Ref<'a, u8> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -707,7 +709,7 @@ pub mod bridge {
         }
         pub fn route_source<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, chain_ids::BridgeRoute>,
+            p0: Ref<'a, crate::bridge::chain_ids::BridgeRoute>,
         ) -> Ref<'a, u8> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -769,7 +771,7 @@ pub mod bridge {
         }
         pub fn valid_routes(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-        ) -> Arg<Vec<chain_ids::BridgeRoute>> {
+        ) -> Arg<Vec<crate::bridge::chain_ids::BridgeRoute>> {
             builder
                 .move_call(
                     sui_transaction_builder::Function::new(
@@ -784,7 +786,10 @@ pub mod bridge {
         }
     }
     pub mod committee {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -805,10 +810,13 @@ pub mod bridge {
         }
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct)]
         pub struct BridgeCommittee {
-            pub members: vec_map::VecMap<Vec<u8>, committee::CommitteeMember>,
-            pub member_registrations: vec_map::VecMap<
+            pub members: crate::sui::vec_map::VecMap<
+                Vec<u8>,
+                crate::bridge::committee::CommitteeMember,
+            >,
+            pub member_registrations: crate::sui::vec_map::VecMap<
                 Address,
-                committee::CommitteeMemberRegistration,
+                crate::bridge::committee::CommitteeMemberRegistration,
             >,
             pub last_committee_update_epoch: u64,
         }
@@ -861,7 +869,10 @@ pub mod bridge {
         }
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct)]
         pub struct CommitteeUpdateEvent {
-            pub members: vec_map::VecMap<Vec<u8>, committee::CommitteeMember>,
+            pub members: crate::sui::vec_map::VecMap<
+                Vec<u8>,
+                crate::bridge::committee::CommitteeMember,
+            >,
             pub stake_participation_percentage: u64,
         }
         impl CommitteeUpdateEvent {
@@ -873,7 +884,7 @@ pub mod bridge {
         }
         pub fn check_uniqueness_bridge_keys<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, committee::BridgeCommittee>,
+            p0: Ref<'a, crate::bridge::committee::BridgeCommittee>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -891,8 +902,14 @@ pub mod bridge {
         }
         pub fn committee_members<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, committee::BridgeCommittee>,
-        ) -> Ref<'a, vec_map::VecMap<Vec<u8>, committee::CommitteeMember>> {
+            p0: Ref<'a, crate::bridge::committee::BridgeCommittee>,
+        ) -> Ref<
+            'a,
+            crate::sui::vec_map::VecMap<
+                Vec<u8>,
+                crate::bridge::committee::CommitteeMember,
+            >,
+        > {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -908,7 +925,7 @@ pub mod bridge {
         }
         pub fn create<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-        ) -> Arg<committee::BridgeCommittee> {
+        ) -> Arg<crate::bridge::committee::BridgeCommittee> {
             builder
                 .move_call(
                     sui_transaction_builder::Function::new(
@@ -923,8 +940,8 @@ pub mod bridge {
         }
         pub fn execute_blocklist<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, committee::BridgeCommittee>,
-            p1: Arg<message::Blocklist>,
+            p0: MutRef<'a, crate::bridge::committee::BridgeCommittee>,
+            p1: Arg<crate::bridge::message::Blocklist>,
         ) {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -941,8 +958,8 @@ pub mod bridge {
         }
         pub fn register<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, committee::BridgeCommittee>,
-            p1: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::bridge::committee::BridgeCommittee>,
+            p1: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
             p2: Arg<Vec<u8>>,
             p3: Arg<Vec<u8>>,
         ) {
@@ -963,8 +980,8 @@ pub mod bridge {
         }
         pub fn try_create_next_committee<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, committee::BridgeCommittee>,
-            p1: Arg<vec_map::VecMap<Address, u64>>,
+            p0: MutRef<'a, crate::bridge::committee::BridgeCommittee>,
+            p1: Arg<crate::sui::vec_map::VecMap<Address, u64>>,
             p2: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -983,7 +1000,7 @@ pub mod bridge {
         }
         pub fn update_node_url<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, committee::BridgeCommittee>,
+            p0: MutRef<'a, crate::bridge::committee::BridgeCommittee>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -1001,8 +1018,8 @@ pub mod bridge {
         }
         pub fn verify_signatures<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, committee::BridgeCommittee>,
-            p1: Arg<message::BridgeMessage>,
+            p0: Ref<'a, crate::bridge::committee::BridgeCommittee>,
+            p1: Arg<crate::bridge::message::BridgeMessage>,
             p2: Arg<Vec<Vec<u8>>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -1021,7 +1038,10 @@ pub mod bridge {
         }
     }
     pub mod crypto {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -1047,7 +1067,10 @@ pub mod bridge {
         }
     }
     pub mod limiter {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -1056,10 +1079,13 @@ pub mod bridge {
         pub const MODULE_NAME: &str = "limiter";
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct)]
         pub struct TransferLimiter {
-            pub transfer_limits: vec_map::VecMap<chain_ids::BridgeRoute, u64>,
-            pub transfer_records: vec_map::VecMap<
-                chain_ids::BridgeRoute,
-                limiter::TransferRecord,
+            pub transfer_limits: crate::sui::vec_map::VecMap<
+                crate::bridge::chain_ids::BridgeRoute,
+                u64,
+            >,
+            pub transfer_records: crate::sui::vec_map::VecMap<
+                crate::bridge::chain_ids::BridgeRoute,
+                crate::bridge::limiter::TransferRecord,
             >,
         }
         impl TransferLimiter {
@@ -1098,7 +1124,7 @@ pub mod bridge {
         }
         pub fn adjust_transfer_records<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, limiter::TransferRecord>,
+            p0: MutRef<'a, crate::bridge::limiter::TransferRecord>,
             p1: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -1116,10 +1142,10 @@ pub mod bridge {
         }
         pub fn check_and_record_sending_transfer<'a, T0: MoveType>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, limiter::TransferLimiter>,
-            p1: Ref<'a, treasury::BridgeTreasury>,
-            p2: Ref<'a, clock::Clock>,
-            p3: Arg<chain_ids::BridgeRoute>,
+            p0: MutRef<'a, crate::bridge::limiter::TransferLimiter>,
+            p1: Ref<'a, crate::bridge::treasury::BridgeTreasury>,
+            p2: Ref<'a, crate::sui::clock::Clock>,
+            p3: Arg<crate::bridge::chain_ids::BridgeRoute>,
             p4: Arg<u64>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
@@ -1142,7 +1168,7 @@ pub mod bridge {
         }
         pub fn current_hour_since_epoch<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, clock::Clock>,
+            p0: Ref<'a, crate::sui::clock::Clock>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -1159,8 +1185,8 @@ pub mod bridge {
         }
         pub fn get_route_limit<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, limiter::TransferLimiter>,
-            p1: Ref<'a, chain_ids::BridgeRoute>,
+            p0: Ref<'a, crate::bridge::limiter::TransferLimiter>,
+            p1: Ref<'a, crate::bridge::chain_ids::BridgeRoute>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -1178,7 +1204,9 @@ pub mod bridge {
         }
         pub fn initial_transfer_limits(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-        ) -> Arg<vec_map::VecMap<chain_ids::BridgeRoute, u64>> {
+        ) -> Arg<
+            crate::sui::vec_map::VecMap<crate::bridge::chain_ids::BridgeRoute, u64>,
+        > {
             builder
                 .move_call(
                     sui_transaction_builder::Function::new(
@@ -1193,7 +1221,7 @@ pub mod bridge {
         }
         pub fn new(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-        ) -> Arg<limiter::TransferLimiter> {
+        ) -> Arg<crate::bridge::limiter::TransferLimiter> {
             builder
                 .move_call(
                     sui_transaction_builder::Function::new(
@@ -1208,8 +1236,8 @@ pub mod bridge {
         }
         pub fn update_route_limit<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, limiter::TransferLimiter>,
-            p1: Ref<'a, chain_ids::BridgeRoute>,
+            p0: MutRef<'a, crate::bridge::limiter::TransferLimiter>,
+            p1: Ref<'a, crate::bridge::chain_ids::BridgeRoute>,
             p2: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -1228,7 +1256,10 @@ pub mod bridge {
         }
     }
     pub mod message {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -1306,7 +1337,7 @@ pub mod bridge {
             pub seq_num: u64,
             pub source_chain: u8,
             pub payload: Vec<u8>,
-            pub parsed_payload: message::TokenTransferPayload,
+            pub parsed_payload: crate::bridge::message::TokenTransferPayload,
         }
         impl ParsedTokenTransferMessage {
             pub const TYPE_ORIGIN_ID: Address = Address::new([
@@ -1357,7 +1388,7 @@ pub mod bridge {
         }
         pub fn blocklist_type<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::Blocklist>,
+            p0: Ref<'a, crate::bridge::message::Blocklist>,
         ) -> Arg<u8> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -1374,7 +1405,7 @@ pub mod bridge {
         }
         pub fn blocklist_validator_addresses<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::Blocklist>,
+            p0: Ref<'a, crate::bridge::message::Blocklist>,
         ) -> Ref<'a, Vec<Vec<u8>>> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -1397,7 +1428,7 @@ pub mod bridge {
             p3: Arg<Vec<u8>>,
             p4: Arg<Vec<String>>,
             p5: Arg<Vec<u64>>,
-        ) -> Arg<message::BridgeMessage> {
+        ) -> Arg<crate::bridge::message::BridgeMessage> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -1425,7 +1456,7 @@ pub mod bridge {
             p1: Arg<u64>,
             p2: Arg<u8>,
             p3: Arg<Vec<Vec<u8>>>,
-        ) -> Arg<message::BridgeMessage> {
+        ) -> Arg<crate::bridge::message::BridgeMessage> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -1447,7 +1478,7 @@ pub mod bridge {
             p0: Arg<u8>,
             p1: Arg<u64>,
             p2: Arg<u8>,
-        ) -> Arg<message::BridgeMessage> {
+        ) -> Arg<crate::bridge::message::BridgeMessage> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -1468,7 +1499,7 @@ pub mod bridge {
             p0: Arg<u8>,
             p1: Arg<u8>,
             p2: Arg<u64>,
-        ) -> Arg<message::BridgeMessageKey> {
+        ) -> Arg<crate::bridge::message::BridgeMessageKey> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -1493,7 +1524,7 @@ pub mod bridge {
             p4: Arg<Vec<u8>>,
             p5: Arg<u8>,
             p6: Arg<u64>,
-        ) -> Arg<message::BridgeMessage> {
+        ) -> Arg<crate::bridge::message::BridgeMessage> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -1522,7 +1553,7 @@ pub mod bridge {
             p1: Arg<u8>,
             p2: Arg<u64>,
             p3: Arg<u64>,
-        ) -> Arg<message::BridgeMessage> {
+        ) -> Arg<crate::bridge::message::BridgeMessage> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -1546,7 +1577,7 @@ pub mod bridge {
             p1: Arg<u64>,
             p2: Arg<u8>,
             p3: Arg<u64>,
-        ) -> Arg<message::BridgeMessage> {
+        ) -> Arg<crate::bridge::message::BridgeMessage> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -1581,7 +1612,7 @@ pub mod bridge {
         }
         pub fn emergency_op_type<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::EmergencyOp>,
+            p0: Ref<'a, crate::bridge::message::EmergencyOp>,
         ) -> Arg<u8> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -1613,8 +1644,8 @@ pub mod bridge {
         }
         pub fn extract_add_tokens_on_sui<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::BridgeMessage>,
-        ) -> Arg<message::AddTokenOnSui> {
+            p0: Ref<'a, crate::bridge::message::BridgeMessage>,
+        ) -> Arg<crate::bridge::message::AddTokenOnSui> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -1630,8 +1661,8 @@ pub mod bridge {
         }
         pub fn extract_blocklist_payload<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::BridgeMessage>,
-        ) -> Arg<message::Blocklist> {
+            p0: Ref<'a, crate::bridge::message::BridgeMessage>,
+        ) -> Arg<crate::bridge::message::Blocklist> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -1647,8 +1678,8 @@ pub mod bridge {
         }
         pub fn extract_emergency_op_payload<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::BridgeMessage>,
-        ) -> Arg<message::EmergencyOp> {
+            p0: Ref<'a, crate::bridge::message::BridgeMessage>,
+        ) -> Arg<crate::bridge::message::EmergencyOp> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -1664,8 +1695,8 @@ pub mod bridge {
         }
         pub fn extract_token_bridge_payload<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::BridgeMessage>,
-        ) -> Arg<message::TokenTransferPayload> {
+            p0: Ref<'a, crate::bridge::message::BridgeMessage>,
+        ) -> Arg<crate::bridge::message::TokenTransferPayload> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -1681,8 +1712,8 @@ pub mod bridge {
         }
         pub fn extract_update_asset_price<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::BridgeMessage>,
-        ) -> Arg<message::UpdateAssetPrice> {
+            p0: Ref<'a, crate::bridge::message::BridgeMessage>,
+        ) -> Arg<crate::bridge::message::UpdateAssetPrice> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -1698,8 +1729,8 @@ pub mod bridge {
         }
         pub fn extract_update_bridge_limit<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::BridgeMessage>,
-        ) -> Arg<message::UpdateBridgeLimit> {
+            p0: Ref<'a, crate::bridge::message::BridgeMessage>,
+        ) -> Arg<crate::bridge::message::UpdateBridgeLimit> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -1715,7 +1746,7 @@ pub mod bridge {
         }
         pub fn is_native<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::AddTokenOnSui>,
+            p0: Ref<'a, crate::bridge::message::AddTokenOnSui>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -1732,8 +1763,8 @@ pub mod bridge {
         }
         pub fn key<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::BridgeMessage>,
-        ) -> Arg<message::BridgeMessageKey> {
+            p0: Ref<'a, crate::bridge::message::BridgeMessage>,
+        ) -> Arg<crate::bridge::message::BridgeMessageKey> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -1749,7 +1780,7 @@ pub mod bridge {
         }
         pub fn message_type<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::BridgeMessage>,
+            p0: Ref<'a, crate::bridge::message::BridgeMessage>,
         ) -> Arg<u8> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -1766,7 +1797,7 @@ pub mod bridge {
         }
         pub fn message_version<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::BridgeMessage>,
+            p0: Ref<'a, crate::bridge::message::BridgeMessage>,
         ) -> Arg<u8> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -1783,7 +1814,7 @@ pub mod bridge {
         }
         pub fn payload<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::BridgeMessage>,
+            p0: Ref<'a, crate::bridge::message::BridgeMessage>,
         ) -> Arg<Vec<u8>> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -1800,7 +1831,7 @@ pub mod bridge {
         }
         pub fn peel_u64_be<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, bcs::BCS>,
+            p0: MutRef<'a, crate::sui::bcs::BCS>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -1817,7 +1848,7 @@ pub mod bridge {
         }
         pub fn required_voting_power<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::BridgeMessage>,
+            p0: Ref<'a, crate::bridge::message::BridgeMessage>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -1851,7 +1882,7 @@ pub mod bridge {
         }
         pub fn seq_num<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::BridgeMessage>,
+            p0: Ref<'a, crate::bridge::message::BridgeMessage>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -1868,7 +1899,7 @@ pub mod bridge {
         }
         pub fn serialize_message(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<message::BridgeMessage>,
+            p0: Arg<crate::bridge::message::BridgeMessage>,
         ) -> Arg<Vec<u8>> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -1885,7 +1916,7 @@ pub mod bridge {
         }
         pub fn source_chain<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::BridgeMessage>,
+            p0: Ref<'a, crate::bridge::message::BridgeMessage>,
         ) -> Arg<u8> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -1902,8 +1933,8 @@ pub mod bridge {
         }
         pub fn to_parsed_token_transfer_message<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::BridgeMessage>,
-        ) -> Arg<message::ParsedTokenTransferMessage> {
+            p0: Ref<'a, crate::bridge::message::BridgeMessage>,
+        ) -> Arg<crate::bridge::message::ParsedTokenTransferMessage> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -1920,7 +1951,7 @@ pub mod bridge {
         }
         pub fn token_amount<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::TokenTransferPayload>,
+            p0: Ref<'a, crate::bridge::message::TokenTransferPayload>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -1937,7 +1968,7 @@ pub mod bridge {
         }
         pub fn token_ids<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::AddTokenOnSui>,
+            p0: Ref<'a, crate::bridge::message::AddTokenOnSui>,
         ) -> Arg<Vec<u8>> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -1954,7 +1985,7 @@ pub mod bridge {
         }
         pub fn token_prices<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::AddTokenOnSui>,
+            p0: Ref<'a, crate::bridge::message::AddTokenOnSui>,
         ) -> Arg<Vec<u64>> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -1971,7 +2002,7 @@ pub mod bridge {
         }
         pub fn token_target_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::TokenTransferPayload>,
+            p0: Ref<'a, crate::bridge::message::TokenTransferPayload>,
         ) -> Arg<Vec<u8>> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -1988,7 +2019,7 @@ pub mod bridge {
         }
         pub fn token_target_chain<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::TokenTransferPayload>,
+            p0: Ref<'a, crate::bridge::message::TokenTransferPayload>,
         ) -> Arg<u8> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -2005,7 +2036,7 @@ pub mod bridge {
         }
         pub fn token_type<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::TokenTransferPayload>,
+            p0: Ref<'a, crate::bridge::message::TokenTransferPayload>,
         ) -> Arg<u8> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -2022,7 +2053,7 @@ pub mod bridge {
         }
         pub fn token_type_names<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::AddTokenOnSui>,
+            p0: Ref<'a, crate::bridge::message::AddTokenOnSui>,
         ) -> Arg<Vec<String>> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -2039,7 +2070,7 @@ pub mod bridge {
         }
         pub fn update_asset_price_payload_new_price<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::UpdateAssetPrice>,
+            p0: Ref<'a, crate::bridge::message::UpdateAssetPrice>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -2057,7 +2088,7 @@ pub mod bridge {
         }
         pub fn update_asset_price_payload_token_id<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::UpdateAssetPrice>,
+            p0: Ref<'a, crate::bridge::message::UpdateAssetPrice>,
         ) -> Arg<u8> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -2075,7 +2106,7 @@ pub mod bridge {
         }
         pub fn update_bridge_limit_payload_limit<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::UpdateBridgeLimit>,
+            p0: Ref<'a, crate::bridge::message::UpdateBridgeLimit>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -2093,7 +2124,7 @@ pub mod bridge {
         }
         pub fn update_bridge_limit_payload_receiving_chain<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::UpdateBridgeLimit>,
+            p0: Ref<'a, crate::bridge::message::UpdateBridgeLimit>,
         ) -> Arg<u8> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -2113,7 +2144,7 @@ pub mod bridge {
         }
         pub fn update_bridge_limit_payload_sending_chain<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, message::UpdateBridgeLimit>,
+            p0: Ref<'a, crate::bridge::message::UpdateBridgeLimit>,
         ) -> Arg<u8> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -2131,7 +2162,10 @@ pub mod bridge {
         }
     }
     pub mod message_types {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -2230,7 +2264,10 @@ pub mod bridge {
         }
     }
     pub mod treasury {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -2253,10 +2290,13 @@ pub mod bridge {
         }
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct)]
         pub struct BridgeTreasury {
-            pub treasuries: object_bag::ObjectBag,
-            pub supported_tokens: vec_map::VecMap<String, treasury::BridgeTokenMetadata>,
-            pub id_token_type_map: vec_map::VecMap<u8, String>,
-            pub waiting_room: bag::Bag,
+            pub treasuries: crate::sui::object_bag::ObjectBag,
+            pub supported_tokens: crate::sui::vec_map::VecMap<
+                String,
+                crate::bridge::treasury::BridgeTokenMetadata,
+            >,
+            pub id_token_type_map: crate::sui::vec_map::VecMap<u8, String>,
+            pub waiting_room: crate::sui::bag::Bag,
         }
         impl BridgeTreasury {
             pub const TYPE_ORIGIN_ID: Address = Address::new([
@@ -2268,7 +2308,7 @@ pub mod bridge {
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct)]
         pub struct ForeignTokenRegistration {
             pub type_name: String,
-            pub uc: package::UpgradeCap,
+            pub uc: crate::sui::package::UpgradeCap,
             pub decimal: u8,
         }
         impl ForeignTokenRegistration {
@@ -2320,7 +2360,7 @@ pub mod bridge {
         }
         pub fn add_new_token<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, treasury::BridgeTreasury>,
+            p0: MutRef<'a, crate::bridge::treasury::BridgeTreasury>,
             p1: Arg<String>,
             p2: Arg<u8>,
             p3: Arg<bool>,
@@ -2344,8 +2384,8 @@ pub mod bridge {
         }
         pub fn burn<'a, T0: MoveType>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, treasury::BridgeTreasury>,
-            p1: Arg<coin::Coin<T0>>,
+            p0: MutRef<'a, crate::bridge::treasury::BridgeTreasury>,
+            p1: Arg<crate::sui::coin::Coin<T0>>,
         ) {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -2362,7 +2402,7 @@ pub mod bridge {
         }
         pub fn create<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-        ) -> Arg<treasury::BridgeTreasury> {
+        ) -> Arg<crate::bridge::treasury::BridgeTreasury> {
             builder
                 .move_call(
                     sui_transaction_builder::Function::new(
@@ -2377,7 +2417,7 @@ pub mod bridge {
         }
         pub fn decimal_multiplier<'a, T0: MoveType>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, treasury::BridgeTreasury>,
+            p0: Ref<'a, crate::bridge::treasury::BridgeTreasury>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -2394,8 +2434,8 @@ pub mod bridge {
         }
         pub fn get_token_metadata<'a, T0: MoveType>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, treasury::BridgeTreasury>,
-        ) -> Arg<treasury::BridgeTokenMetadata> {
+            p0: Ref<'a, crate::bridge::treasury::BridgeTreasury>,
+        ) -> Arg<crate::bridge::treasury::BridgeTokenMetadata> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -2411,9 +2451,9 @@ pub mod bridge {
         }
         pub fn mint<'a, T0: MoveType>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, treasury::BridgeTreasury>,
+            p0: MutRef<'a, crate::bridge::treasury::BridgeTreasury>,
             p1: Arg<u64>,
-        ) -> Arg<coin::Coin<T0>> {
+        ) -> Arg<crate::sui::coin::Coin<T0>> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -2430,7 +2470,7 @@ pub mod bridge {
         }
         pub fn notional_value<'a, T0: MoveType>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, treasury::BridgeTreasury>,
+            p0: Ref<'a, crate::bridge::treasury::BridgeTreasury>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -2447,10 +2487,10 @@ pub mod bridge {
         }
         pub fn register_foreign_token<'a, T0: MoveType>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, treasury::BridgeTreasury>,
-            p1: Arg<coin::TreasuryCap<T0>>,
-            p2: Arg<package::UpgradeCap>,
-            p3: Ref<'a, coin::CoinMetadata<T0>>,
+            p0: MutRef<'a, crate::bridge::treasury::BridgeTreasury>,
+            p1: Arg<crate::sui::coin::TreasuryCap<T0>>,
+            p2: Arg<crate::sui::package::UpgradeCap>,
+            p3: Ref<'a, crate::sui::coin::CoinMetadata<T0>>,
         ) {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -2469,7 +2509,7 @@ pub mod bridge {
         }
         pub fn token_id<'a, T0: MoveType>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, treasury::BridgeTreasury>,
+            p0: Ref<'a, crate::bridge::treasury::BridgeTreasury>,
         ) -> Arg<u8> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -2486,7 +2526,7 @@ pub mod bridge {
         }
         pub fn update_asset_notional_price<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, treasury::BridgeTreasury>,
+            p0: MutRef<'a, crate::bridge::treasury::BridgeTreasury>,
             p1: Arg<u8>,
             p2: Arg<u64>,
         ) {

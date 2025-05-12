@@ -4,7 +4,7 @@ use proc_macro::TokenStream;
 use proc_macro2::Ident;
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
-use syn::{parse_macro_input, DeriveInput, ExprArray, GenericParam, Generics, LitStr, Path, Token};
+use syn::{parse_macro_input, DeriveInput, GenericParam, Generics, LitStr, Token};
 
 #[proc_macro_derive(Key)]
 pub fn key_derive(input: TokenStream) -> TokenStream {
@@ -88,14 +88,14 @@ struct MoveContractArgs {
     network: SuiNetwork,
     package_alias: String,
     package: String,
-    deps: Vec<Path>,
+    path: Option<String>,
 }
 
 impl Parse for MoveContractArgs {
     fn parse(input: ParseStream) -> Result<Self, syn::Error> {
         let mut alias = None;
         let mut package = None;
-        let mut deps = Vec::new();
+        let mut path = None;
         let mut network = SuiNetwork::Mainnet;
 
         while !input.is_empty() {
@@ -107,15 +107,7 @@ impl Parse for MoveContractArgs {
             } else if key == "package" {
                 package = Some(input.parse::<LitStr>()?.value()); // Parse string literal
             } else if key == "deps" {
-                let array: ExprArray = input.parse()?; // Parse `[ sui, move_stdlib ]`
-                deps = array
-                    .elems
-                    .iter()
-                    .map(|expr| match expr {
-                        syn::Expr::Path(path) => path.path.clone(),
-                        _ => panic!("Expected an identifier in deps list"),
-                    })
-                    .collect();
+                path = Some(quote!(input.parse::<Path>()?).to_string()); // Parse string literal
             } else if key == "network" {
                 if let Ok(lit) = input.parse::<LitStr>() {
                     network = match lit.value().to_lowercase().as_str() {
@@ -142,7 +134,7 @@ impl Parse for MoveContractArgs {
             network,
             package_alias: alias.ok_or_else(|| syn::Error::new(input.span(), "Missing alias"))?,
             package: package.ok_or_else(|| syn::Error::new(input.span(), "Missing package"))?,
-            deps,
+            path,
         })
     }
 }
@@ -153,7 +145,7 @@ pub fn move_contract(input: TokenStream) -> TokenStream {
         network,
         package_alias,
         package,
-        deps,
+        path,
     } = parse_macro_input!(input as MoveContractArgs);
-    MoveCodegen::expand(network, &package, &package_alias, deps).unwrap().into()
+    MoveCodegen::expand(network, &package, &package_alias, &path.unwrap_or("crate".to_string())).unwrap().into()
 }

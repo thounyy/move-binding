@@ -3,13 +3,12 @@ source: move-binding/tests/snapshot_tests.rs
 expression: pretty
 ---
 pub mod sui_system {
-    use std::str::FromStr;
-    use move_binding_derive::{Key, MoveStruct};
-    use move_types::{MoveType, Address, Identifier, TypeTag, StructTag};
-    use move_types::functions::{Arg, Ref, MutRef};
     pub const PACKAGE_VERSION: u64 = 20u64;
     pub mod genesis {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -79,7 +78,7 @@ pub mod sui_system {
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct)]
         pub struct TokenDistributionSchedule {
             pub stake_subsidy_fund_mist: u64,
-            pub allocations: Vec<genesis::TokenAllocation>,
+            pub allocations: Vec<crate::sui_system::genesis::TokenAllocation>,
         }
         impl TokenDistributionSchedule {
             pub const TYPE_ORIGIN_ID: Address = Address::new([
@@ -90,9 +89,9 @@ pub mod sui_system {
         }
         pub fn allocate_tokens<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<balance::Balance<sui::SUI>>,
-            p1: Arg<Vec<genesis::TokenAllocation>>,
-            p2: MutRef<'a, Vec<validator::Validator>>,
+            p0: Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>>,
+            p1: Arg<Vec<crate::sui_system::genesis::TokenAllocation>>,
+            p2: MutRef<'a, Vec<crate::sui_system::validator::Validator>>,
         ) {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -110,11 +109,11 @@ pub mod sui_system {
         }
         pub fn create<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<sui_sdk_types::ObjectId>,
-            p1: Arg<balance::Balance<sui::SUI>>,
-            p2: Arg<genesis::GenesisChainParameters>,
-            p3: Arg<Vec<genesis::GenesisValidatorMetadata>>,
-            p4: Arg<genesis::TokenDistributionSchedule>,
+            p0: Arg<ObjectId>,
+            p1: Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>>,
+            p2: Arg<crate::sui_system::genesis::GenesisChainParameters>,
+            p3: Arg<Vec<crate::sui_system::genesis::GenesisValidatorMetadata>>,
+            p4: Arg<crate::sui_system::genesis::TokenDistributionSchedule>,
         ) {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -134,7 +133,10 @@ pub mod sui_system {
         }
     }
     pub mod stake_subsidy {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -143,12 +145,12 @@ pub mod sui_system {
         pub const MODULE_NAME: &str = "stake_subsidy";
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct)]
         pub struct StakeSubsidy {
-            pub balance: balance::Balance<sui::SUI>,
+            pub balance: crate::sui::balance::Balance<crate::sui::sui::SUI>,
             pub distribution_counter: u64,
             pub current_distribution_amount: u64,
             pub stake_subsidy_period_length: u64,
             pub stake_subsidy_decrease_rate: u16,
-            pub extra_fields: bag::Bag,
+            pub extra_fields: crate::sui::bag::Bag,
         }
         impl StakeSubsidy {
             pub const TYPE_ORIGIN_ID: Address = Address::new([
@@ -159,8 +161,8 @@ pub mod sui_system {
         }
         pub fn advance_epoch<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, stake_subsidy::StakeSubsidy>,
-        ) -> Arg<balance::Balance<sui::SUI>> {
+            p0: MutRef<'a, crate::sui_system::stake_subsidy::StakeSubsidy>,
+        ) -> Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -176,11 +178,11 @@ pub mod sui_system {
         }
         pub fn create<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<balance::Balance<sui::SUI>>,
+            p0: Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>>,
             p1: Arg<u64>,
             p2: Arg<u64>,
             p3: Arg<u16>,
-        ) -> Arg<stake_subsidy::StakeSubsidy> {
+        ) -> Arg<crate::sui_system::stake_subsidy::StakeSubsidy> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -199,7 +201,7 @@ pub mod sui_system {
         }
         pub fn current_epoch_subsidy_amount<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, stake_subsidy::StakeSubsidy>,
+            p0: Ref<'a, crate::sui_system::stake_subsidy::StakeSubsidy>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -216,7 +218,7 @@ pub mod sui_system {
         }
         pub fn get_distribution_counter<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, stake_subsidy::StakeSubsidy>,
+            p0: Ref<'a, crate::sui_system::stake_subsidy::StakeSubsidy>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -233,7 +235,10 @@ pub mod sui_system {
         }
     }
     pub mod staking_pool {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -242,8 +247,8 @@ pub mod sui_system {
         pub const MODULE_NAME: &str = "staking_pool";
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct, Key)]
         pub struct FungibleStakedSui {
-            pub id: sui_sdk_types::ObjectId,
-            pub pool_id: sui_sdk_types::ObjectId,
+            pub id: ObjectId,
+            pub pool_id: ObjectId,
             pub value: u64,
         }
         impl FungibleStakedSui {
@@ -255,9 +260,9 @@ pub mod sui_system {
         }
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct, Key)]
         pub struct FungibleStakedSuiData {
-            pub id: sui_sdk_types::ObjectId,
+            pub id: ObjectId,
             pub total_supply: u64,
-            pub principal: balance::Balance<sui::SUI>,
+            pub principal: crate::sui::balance::Balance<crate::sui::sui::SUI>,
         }
         impl FungibleStakedSuiData {
             pub const TYPE_ORIGIN_ID: Address = Address::new([
@@ -291,10 +296,10 @@ pub mod sui_system {
         }
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct, Key)]
         pub struct StakedSui {
-            pub id: sui_sdk_types::ObjectId,
-            pub pool_id: sui_sdk_types::ObjectId,
+            pub id: ObjectId,
+            pub pool_id: ObjectId,
             pub stake_activation_epoch: u64,
-            pub principal: balance::Balance<sui::SUI>,
+            pub principal: crate::sui::balance::Balance<crate::sui::sui::SUI>,
         }
         impl StakedSui {
             pub const TYPE_ORIGIN_ID: Address = Address::new([
@@ -305,17 +310,20 @@ pub mod sui_system {
         }
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct, Key)]
         pub struct StakingPool {
-            pub id: sui_sdk_types::ObjectId,
+            pub id: ObjectId,
             pub activation_epoch: Option<u64>,
             pub deactivation_epoch: Option<u64>,
             pub sui_balance: u64,
-            pub rewards_pool: balance::Balance<sui::SUI>,
+            pub rewards_pool: crate::sui::balance::Balance<crate::sui::sui::SUI>,
             pub pool_token_balance: u64,
-            pub exchange_rates: table::Table<u64, staking_pool::PoolTokenExchangeRate>,
+            pub exchange_rates: crate::sui::table::Table<
+                u64,
+                crate::sui_system::staking_pool::PoolTokenExchangeRate,
+            >,
             pub pending_stake: u64,
             pub pending_total_sui_withdraw: u64,
             pub pending_pool_token_withdraw: u64,
-            pub extra_fields: bag::Bag,
+            pub extra_fields: crate::sui::bag::Bag,
         }
         impl StakingPool {
             pub const TYPE_ORIGIN_ID: Address = Address::new([
@@ -326,7 +334,7 @@ pub mod sui_system {
         }
         pub fn activate_staking_pool<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, staking_pool::StakingPool>,
+            p0: MutRef<'a, crate::sui_system::staking_pool::StakingPool>,
             p1: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -344,7 +352,7 @@ pub mod sui_system {
         }
         pub fn calculate_fungible_staked_sui_withdraw_amount(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<staking_pool::PoolTokenExchangeRate>,
+            p0: Arg<crate::sui_system::staking_pool::PoolTokenExchangeRate>,
             p1: Arg<u64>,
             p2: Arg<u64>,
             p3: Arg<u64>,
@@ -370,7 +378,7 @@ pub mod sui_system {
         }
         pub fn check_balance_invariants<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, staking_pool::StakingPool>,
+            p0: Ref<'a, crate::sui_system::staking_pool::StakingPool>,
             p1: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -388,9 +396,9 @@ pub mod sui_system {
         }
         pub fn convert_to_fungible_staked_sui<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, staking_pool::StakingPool>,
-            p1: Arg<staking_pool::StakedSui>,
-        ) -> Arg<staking_pool::FungibleStakedSui> {
+            p0: MutRef<'a, crate::sui_system::staking_pool::StakingPool>,
+            p1: Arg<crate::sui_system::staking_pool::StakedSui>,
+        ) -> Arg<crate::sui_system::staking_pool::FungibleStakedSui> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -407,7 +415,7 @@ pub mod sui_system {
         }
         pub fn deactivate_staking_pool<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, staking_pool::StakingPool>,
+            p0: MutRef<'a, crate::sui_system::staking_pool::StakingPool>,
             p1: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -425,8 +433,8 @@ pub mod sui_system {
         }
         pub fn deposit_rewards<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, staking_pool::StakingPool>,
-            p1: Arg<balance::Balance<sui::SUI>>,
+            p0: MutRef<'a, crate::sui_system::staking_pool::StakingPool>,
+            p1: Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>>,
         ) {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -443,8 +451,14 @@ pub mod sui_system {
         }
         pub fn exchange_rates<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, staking_pool::StakingPool>,
-        ) -> Ref<'a, table::Table<u64, staking_pool::PoolTokenExchangeRate>> {
+            p0: Ref<'a, crate::sui_system::staking_pool::StakingPool>,
+        ) -> Ref<
+            'a,
+            crate::sui::table::Table<
+                u64,
+                crate::sui_system::staking_pool::PoolTokenExchangeRate,
+            >,
+        > {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -460,8 +474,8 @@ pub mod sui_system {
         }
         pub fn fungible_staked_sui_pool_id<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, staking_pool::FungibleStakedSui>,
-        ) -> Arg<sui_sdk_types::ObjectId> {
+            p0: Ref<'a, crate::sui_system::staking_pool::FungibleStakedSui>,
+        ) -> Arg<ObjectId> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -477,7 +491,7 @@ pub mod sui_system {
         }
         pub fn fungible_staked_sui_value<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, staking_pool::FungibleStakedSui>,
+            p0: Ref<'a, crate::sui_system::staking_pool::FungibleStakedSui>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -494,7 +508,7 @@ pub mod sui_system {
         }
         pub fn get_sui_amount<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, staking_pool::PoolTokenExchangeRate>,
+            p0: Ref<'a, crate::sui_system::staking_pool::PoolTokenExchangeRate>,
             p1: Arg<u64>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
@@ -513,7 +527,7 @@ pub mod sui_system {
         }
         pub fn get_token_amount<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, staking_pool::PoolTokenExchangeRate>,
+            p0: Ref<'a, crate::sui_system::staking_pool::PoolTokenExchangeRate>,
             p1: Arg<u64>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
@@ -532,7 +546,7 @@ pub mod sui_system {
         }
         pub fn initial_exchange_rate(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-        ) -> Arg<staking_pool::PoolTokenExchangeRate> {
+        ) -> Arg<crate::sui_system::staking_pool::PoolTokenExchangeRate> {
             builder
                 .move_call(
                     sui_transaction_builder::Function::new(
@@ -547,8 +561,8 @@ pub mod sui_system {
         }
         pub fn is_equal_staking_metadata<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, staking_pool::StakedSui>,
-            p1: Ref<'a, staking_pool::StakedSui>,
+            p0: Ref<'a, crate::sui_system::staking_pool::StakedSui>,
+            p1: Ref<'a, crate::sui_system::staking_pool::StakedSui>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -566,7 +580,7 @@ pub mod sui_system {
         }
         pub fn is_inactive<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, staking_pool::StakingPool>,
+            p0: Ref<'a, crate::sui_system::staking_pool::StakingPool>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -583,7 +597,7 @@ pub mod sui_system {
         }
         pub fn is_preactive<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, staking_pool::StakingPool>,
+            p0: Ref<'a, crate::sui_system::staking_pool::StakingPool>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -600,7 +614,7 @@ pub mod sui_system {
         }
         pub fn is_preactive_at_epoch<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, staking_pool::StakingPool>,
+            p0: Ref<'a, crate::sui_system::staking_pool::StakingPool>,
             p1: Arg<u64>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
@@ -619,8 +633,8 @@ pub mod sui_system {
         }
         pub fn join_fungible_staked_sui<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, staking_pool::FungibleStakedSui>,
-            p1: Arg<staking_pool::FungibleStakedSui>,
+            p0: MutRef<'a, crate::sui_system::staking_pool::FungibleStakedSui>,
+            p1: Arg<crate::sui_system::staking_pool::FungibleStakedSui>,
         ) {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -637,8 +651,8 @@ pub mod sui_system {
         }
         pub fn join_staked_sui<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, staking_pool::StakedSui>,
-            p1: Arg<staking_pool::StakedSui>,
+            p0: MutRef<'a, crate::sui_system::staking_pool::StakedSui>,
+            p1: Arg<crate::sui_system::staking_pool::StakedSui>,
         ) {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -655,7 +669,7 @@ pub mod sui_system {
         }
         pub fn new<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-        ) -> Arg<staking_pool::StakingPool> {
+        ) -> Arg<crate::sui_system::staking_pool::StakingPool> {
             builder
                 .move_call(
                     sui_transaction_builder::Function::new(
@@ -670,7 +684,7 @@ pub mod sui_system {
         }
         pub fn pending_stake_amount<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, staking_pool::StakingPool>,
+            p0: Ref<'a, crate::sui_system::staking_pool::StakingPool>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -687,7 +701,7 @@ pub mod sui_system {
         }
         pub fn pending_stake_withdraw_amount<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, staking_pool::StakingPool>,
+            p0: Ref<'a, crate::sui_system::staking_pool::StakingPool>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -704,8 +718,8 @@ pub mod sui_system {
         }
         pub fn pool_id<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, staking_pool::StakedSui>,
-        ) -> Arg<sui_sdk_types::ObjectId> {
+            p0: Ref<'a, crate::sui_system::staking_pool::StakedSui>,
+        ) -> Arg<ObjectId> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -721,7 +735,7 @@ pub mod sui_system {
         }
         pub fn pool_token_amount<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, staking_pool::PoolTokenExchangeRate>,
+            p0: Ref<'a, crate::sui_system::staking_pool::PoolTokenExchangeRate>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -738,9 +752,9 @@ pub mod sui_system {
         }
         pub fn pool_token_exchange_rate_at_epoch<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, staking_pool::StakingPool>,
+            p0: Ref<'a, crate::sui_system::staking_pool::StakingPool>,
             p1: Arg<u64>,
-        ) -> Arg<staking_pool::PoolTokenExchangeRate> {
+        ) -> Arg<crate::sui_system::staking_pool::PoolTokenExchangeRate> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -758,7 +772,7 @@ pub mod sui_system {
         }
         pub fn process_pending_stake<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, staking_pool::StakingPool>,
+            p0: MutRef<'a, crate::sui_system::staking_pool::StakingPool>,
         ) {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -774,7 +788,7 @@ pub mod sui_system {
         }
         pub fn process_pending_stake_withdraw<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, staking_pool::StakingPool>,
+            p0: MutRef<'a, crate::sui_system::staking_pool::StakingPool>,
         ) {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -790,7 +804,7 @@ pub mod sui_system {
         }
         pub fn process_pending_stakes_and_withdraws<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, staking_pool::StakingPool>,
+            p0: MutRef<'a, crate::sui_system::staking_pool::StakingPool>,
         ) {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -807,9 +821,9 @@ pub mod sui_system {
         }
         pub fn redeem_fungible_staked_sui<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, staking_pool::StakingPool>,
-            p1: Arg<staking_pool::FungibleStakedSui>,
-        ) -> Arg<balance::Balance<sui::SUI>> {
+            p0: MutRef<'a, crate::sui_system::staking_pool::StakingPool>,
+            p1: Arg<crate::sui_system::staking_pool::FungibleStakedSui>,
+        ) -> Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -826,10 +840,10 @@ pub mod sui_system {
         }
         pub fn request_add_stake<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, staking_pool::StakingPool>,
-            p1: Arg<balance::Balance<sui::SUI>>,
+            p0: MutRef<'a, crate::sui_system::staking_pool::StakingPool>,
+            p1: Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>>,
             p2: Arg<u64>,
-        ) -> Arg<staking_pool::StakedSui> {
+        ) -> Arg<crate::sui_system::staking_pool::StakedSui> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -847,9 +861,9 @@ pub mod sui_system {
         }
         pub fn request_withdraw_stake<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, staking_pool::StakingPool>,
-            p1: Arg<staking_pool::StakedSui>,
-        ) -> Arg<balance::Balance<sui::SUI>> {
+            p0: MutRef<'a, crate::sui_system::staking_pool::StakingPool>,
+            p1: Arg<crate::sui_system::staking_pool::StakedSui>,
+        ) -> Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -866,9 +880,9 @@ pub mod sui_system {
         }
         pub fn split<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, staking_pool::StakedSui>,
+            p0: MutRef<'a, crate::sui_system::staking_pool::StakedSui>,
             p1: Arg<u64>,
-        ) -> Arg<staking_pool::StakedSui> {
+        ) -> Arg<crate::sui_system::staking_pool::StakedSui> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -885,9 +899,9 @@ pub mod sui_system {
         }
         pub fn split_fungible_staked_sui<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, staking_pool::FungibleStakedSui>,
+            p0: MutRef<'a, crate::sui_system::staking_pool::FungibleStakedSui>,
             p1: Arg<u64>,
-        ) -> Arg<staking_pool::FungibleStakedSui> {
+        ) -> Arg<crate::sui_system::staking_pool::FungibleStakedSui> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -904,7 +918,7 @@ pub mod sui_system {
         }
         pub fn split_staked_sui<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, staking_pool::StakedSui>,
+            p0: MutRef<'a, crate::sui_system::staking_pool::StakedSui>,
             p1: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -922,7 +936,7 @@ pub mod sui_system {
         }
         pub fn stake_activation_epoch<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, staking_pool::StakedSui>,
+            p0: Ref<'a, crate::sui_system::staking_pool::StakedSui>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -939,7 +953,7 @@ pub mod sui_system {
         }
         pub fn staked_sui_amount<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, staking_pool::StakedSui>,
+            p0: Ref<'a, crate::sui_system::staking_pool::StakedSui>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -956,7 +970,7 @@ pub mod sui_system {
         }
         pub fn sui_amount<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, staking_pool::PoolTokenExchangeRate>,
+            p0: Ref<'a, crate::sui_system::staking_pool::PoolTokenExchangeRate>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -973,7 +987,7 @@ pub mod sui_system {
         }
         pub fn sui_balance<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, staking_pool::StakingPool>,
+            p0: Ref<'a, crate::sui_system::staking_pool::StakingPool>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -990,8 +1004,8 @@ pub mod sui_system {
         }
         pub fn unwrap_staked_sui(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<staking_pool::StakedSui>,
-        ) -> Arg<balance::Balance<sui::SUI>> {
+            p0: Arg<crate::sui_system::staking_pool::StakedSui>,
+        ) -> Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -1007,8 +1021,8 @@ pub mod sui_system {
         }
         pub fn withdraw_from_principal<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, staking_pool::StakingPool>,
-            p1: Arg<staking_pool::StakedSui>,
+            p0: Ref<'a, crate::sui_system::staking_pool::StakingPool>,
+            p1: Arg<crate::sui_system::staking_pool::StakedSui>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -1026,11 +1040,11 @@ pub mod sui_system {
         }
         pub fn withdraw_rewards<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, staking_pool::StakingPool>,
+            p0: MutRef<'a, crate::sui_system::staking_pool::StakingPool>,
             p1: Arg<u64>,
             p2: Arg<u64>,
             p3: Arg<u64>,
-        ) -> Arg<balance::Balance<sui::SUI>> {
+        ) -> Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -1049,7 +1063,10 @@ pub mod sui_system {
         }
     }
     pub mod storage_fund {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -1058,8 +1075,12 @@ pub mod sui_system {
         pub const MODULE_NAME: &str = "storage_fund";
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct)]
         pub struct StorageFund {
-            pub total_object_storage_rebates: balance::Balance<sui::SUI>,
-            pub non_refundable_balance: balance::Balance<sui::SUI>,
+            pub total_object_storage_rebates: crate::sui::balance::Balance<
+                crate::sui::sui::SUI,
+            >,
+            pub non_refundable_balance: crate::sui::balance::Balance<
+                crate::sui::sui::SUI,
+            >,
         }
         impl StorageFund {
             pub const TYPE_ORIGIN_ID: Address = Address::new([
@@ -1070,13 +1091,13 @@ pub mod sui_system {
         }
         pub fn advance_epoch<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, storage_fund::StorageFund>,
-            p1: Arg<balance::Balance<sui::SUI>>,
-            p2: Arg<balance::Balance<sui::SUI>>,
-            p3: Arg<balance::Balance<sui::SUI>>,
+            p0: MutRef<'a, crate::sui_system::storage_fund::StorageFund>,
+            p1: Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>>,
+            p2: Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>>,
+            p3: Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>>,
             p4: Arg<u64>,
             p5: Arg<u64>,
-        ) -> Arg<balance::Balance<sui::SUI>> {
+        ) -> Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -1099,8 +1120,8 @@ pub mod sui_system {
         }
         pub fn new(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<balance::Balance<sui::SUI>>,
-        ) -> Arg<storage_fund::StorageFund> {
+            p0: Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>>,
+        ) -> Arg<crate::sui_system::storage_fund::StorageFund> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -1116,7 +1137,7 @@ pub mod sui_system {
         }
         pub fn total_balance<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, storage_fund::StorageFund>,
+            p0: Ref<'a, crate::sui_system::storage_fund::StorageFund>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -1133,7 +1154,7 @@ pub mod sui_system {
         }
         pub fn total_object_storage_rebates<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, storage_fund::StorageFund>,
+            p0: Ref<'a, crate::sui_system::storage_fund::StorageFund>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -1150,7 +1171,10 @@ pub mod sui_system {
         }
     }
     pub mod sui_system {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -1159,7 +1183,7 @@ pub mod sui_system {
         pub const MODULE_NAME: &str = "sui_system";
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct, Key)]
         pub struct SuiSystemState {
-            pub id: sui_sdk_types::ObjectId,
+            pub id: ObjectId,
             pub version: u64,
         }
         impl SuiSystemState {
@@ -1171,7 +1195,7 @@ pub mod sui_system {
         }
         pub fn active_validator_addresses<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
         ) -> Arg<Vec<Address>> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -1188,9 +1212,9 @@ pub mod sui_system {
         }
         pub fn advance_epoch<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<balance::Balance<sui::SUI>>,
-            p1: Arg<balance::Balance<sui::SUI>>,
-            p2: MutRef<'a, sui_system::SuiSystemState>,
+            p0: Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>>,
+            p1: Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>>,
+            p2: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
             p3: Arg<u64>,
             p4: Arg<u64>,
             p5: Arg<u64>,
@@ -1198,7 +1222,7 @@ pub mod sui_system {
             p7: Arg<u64>,
             p8: Arg<u64>,
             p9: Arg<u64>,
-        ) -> Arg<balance::Balance<sui::SUI>> {
+        ) -> Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -1226,9 +1250,9 @@ pub mod sui_system {
         }
         pub fn convert_to_fungible_staked_sui<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
-            p1: Arg<staking_pool::StakedSui>,
-        ) -> Arg<staking_pool::FungibleStakedSui> {
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
+            p1: Arg<crate::sui_system::staking_pool::StakedSui>,
+        ) -> Arg<crate::sui_system::staking_pool::FungibleStakedSui> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -1245,13 +1269,13 @@ pub mod sui_system {
         }
         pub fn create<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<sui_sdk_types::ObjectId>,
-            p1: Arg<Vec<validator::Validator>>,
-            p2: Arg<balance::Balance<sui::SUI>>,
+            p0: Arg<ObjectId>,
+            p1: Arg<Vec<crate::sui_system::validator::Validator>>,
+            p2: Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>>,
             p3: Arg<u64>,
             p4: Arg<u64>,
-            p5: Arg<sui_system_state_inner::SystemParameters>,
-            p6: Arg<stake_subsidy::StakeSubsidy>,
+            p5: Arg<crate::sui_system::sui_system_state_inner::SystemParameters>,
+            p6: Arg<crate::sui_system::stake_subsidy::StakeSubsidy>,
         ) {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -1276,8 +1300,11 @@ pub mod sui_system {
         }
         pub fn load_inner_maybe_upgrade<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
-        ) -> MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2> {
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
+        ) -> MutRef<
+            'a,
+            crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+        > {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -1293,8 +1320,8 @@ pub mod sui_system {
         }
         pub fn load_system_state<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
-        ) -> Ref<'a, sui_system_state_inner::SuiSystemStateInnerV2> {
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
+        ) -> Ref<'a, crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -1310,8 +1337,11 @@ pub mod sui_system {
         }
         pub fn load_system_state_mut<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
-        ) -> MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2> {
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
+        ) -> MutRef<
+            'a,
+            crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+        > {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -1327,9 +1357,15 @@ pub mod sui_system {
         }
         pub fn pool_exchange_rates<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
-            p1: Ref<'a, sui_sdk_types::ObjectId>,
-        ) -> Ref<'a, table::Table<u64, staking_pool::PoolTokenExchangeRate>> {
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
+            p1: Ref<'a, ObjectId>,
+        ) -> Ref<
+            'a,
+            crate::sui::table::Table<
+                u64,
+                crate::sui_system::staking_pool::PoolTokenExchangeRate,
+            >,
+        > {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -1346,9 +1382,9 @@ pub mod sui_system {
         }
         pub fn redeem_fungible_staked_sui<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
-            p1: Arg<staking_pool::FungibleStakedSui>,
-        ) -> Arg<balance::Balance<sui::SUI>> {
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
+            p1: Arg<crate::sui_system::staking_pool::FungibleStakedSui>,
+        ) -> Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -1365,8 +1401,11 @@ pub mod sui_system {
         }
         pub fn report_validator<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
-            p1: Ref<'a, validator_cap::UnverifiedValidatorOperationCap>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
+            p1: Ref<
+                'a,
+                crate::sui_system::validator_cap::UnverifiedValidatorOperationCap,
+            >,
             p2: Arg<Address>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -1385,8 +1424,8 @@ pub mod sui_system {
         }
         pub fn request_add_stake<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
-            p1: Arg<coin::Coin<sui::SUI>>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
+            p1: Arg<crate::sui::coin::Coin<crate::sui::sui::SUI>>,
             p2: Arg<Address>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -1405,8 +1444,8 @@ pub mod sui_system {
         }
         pub fn request_add_stake_mul_coin<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
-            p1: Arg<Vec<coin::Coin<sui::SUI>>>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
+            p1: Arg<Vec<crate::sui::coin::Coin<crate::sui::sui::SUI>>>,
             p2: Arg<Option<u64>>,
             p3: Arg<Address>,
         ) {
@@ -1427,10 +1466,10 @@ pub mod sui_system {
         }
         pub fn request_add_stake_non_entry<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
-            p1: Arg<coin::Coin<sui::SUI>>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
+            p1: Arg<crate::sui::coin::Coin<crate::sui::sui::SUI>>,
             p2: Arg<Address>,
-        ) -> Arg<staking_pool::StakedSui> {
+        ) -> Arg<crate::sui_system::staking_pool::StakedSui> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -1448,7 +1487,7 @@ pub mod sui_system {
         }
         pub fn request_add_validator<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
         ) {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -1464,7 +1503,7 @@ pub mod sui_system {
         }
         pub fn request_add_validator_candidate<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
             p1: Arg<Vec<u8>>,
             p2: Arg<Vec<u8>>,
             p3: Arg<Vec<u8>>,
@@ -1512,7 +1551,7 @@ pub mod sui_system {
         }
         pub fn request_remove_validator<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
         ) {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -1528,7 +1567,7 @@ pub mod sui_system {
         }
         pub fn request_remove_validator_candidate<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
         ) {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -1545,7 +1584,7 @@ pub mod sui_system {
         }
         pub fn request_set_commission_rate<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
             p1: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -1563,8 +1602,11 @@ pub mod sui_system {
         }
         pub fn request_set_gas_price<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
-            p1: Ref<'a, validator_cap::UnverifiedValidatorOperationCap>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
+            p1: Ref<
+                'a,
+                crate::sui_system::validator_cap::UnverifiedValidatorOperationCap,
+            >,
             p2: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -1583,8 +1625,8 @@ pub mod sui_system {
         }
         pub fn request_withdraw_stake<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
-            p1: Arg<staking_pool::StakedSui>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
+            p1: Arg<crate::sui_system::staking_pool::StakedSui>,
         ) {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -1601,9 +1643,9 @@ pub mod sui_system {
         }
         pub fn request_withdraw_stake_non_entry<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
-            p1: Arg<staking_pool::StakedSui>,
-        ) -> Arg<balance::Balance<sui::SUI>> {
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
+            p1: Arg<crate::sui_system::staking_pool::StakedSui>,
+        ) -> Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -1621,7 +1663,7 @@ pub mod sui_system {
         }
         pub fn rotate_operation_cap<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
         ) {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -1637,7 +1679,7 @@ pub mod sui_system {
         }
         pub fn set_candidate_validator_commission_rate<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
             p1: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -1656,8 +1698,11 @@ pub mod sui_system {
         }
         pub fn set_candidate_validator_gas_price<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
-            p1: Ref<'a, validator_cap::UnverifiedValidatorOperationCap>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
+            p1: Ref<
+                'a,
+                crate::sui_system::validator_cap::UnverifiedValidatorOperationCap,
+            >,
             p2: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -1677,7 +1722,7 @@ pub mod sui_system {
         }
         pub fn store_execution_time_estimates<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -1695,8 +1740,11 @@ pub mod sui_system {
         }
         pub fn undo_report_validator<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
-            p1: Ref<'a, validator_cap::UnverifiedValidatorOperationCap>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
+            p1: Ref<
+                'a,
+                crate::sui_system::validator_cap::UnverifiedValidatorOperationCap,
+            >,
             p2: Arg<Address>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -1715,7 +1763,7 @@ pub mod sui_system {
         }
         pub fn update_candidate_validator_network_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -1736,7 +1784,7 @@ pub mod sui_system {
         }
         pub fn update_candidate_validator_network_pubkey<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -1755,7 +1803,7 @@ pub mod sui_system {
         }
         pub fn update_candidate_validator_p2p_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -1774,7 +1822,7 @@ pub mod sui_system {
         }
         pub fn update_candidate_validator_primary_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -1795,7 +1843,7 @@ pub mod sui_system {
         }
         pub fn update_candidate_validator_protocol_pubkey<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
             p1: Arg<Vec<u8>>,
             p2: Arg<Vec<u8>>,
         ) {
@@ -1818,7 +1866,7 @@ pub mod sui_system {
         }
         pub fn update_candidate_validator_worker_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -1837,7 +1885,7 @@ pub mod sui_system {
         }
         pub fn update_candidate_validator_worker_pubkey<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -1856,7 +1904,7 @@ pub mod sui_system {
         }
         pub fn update_validator_description<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -1874,7 +1922,7 @@ pub mod sui_system {
         }
         pub fn update_validator_image_url<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -1892,7 +1940,7 @@ pub mod sui_system {
         }
         pub fn update_validator_name<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -1910,7 +1958,7 @@ pub mod sui_system {
         }
         pub fn update_validator_next_epoch_network_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -1931,7 +1979,7 @@ pub mod sui_system {
         }
         pub fn update_validator_next_epoch_network_pubkey<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -1952,7 +2000,7 @@ pub mod sui_system {
         }
         pub fn update_validator_next_epoch_p2p_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -1971,7 +2019,7 @@ pub mod sui_system {
         }
         pub fn update_validator_next_epoch_primary_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -1992,7 +2040,7 @@ pub mod sui_system {
         }
         pub fn update_validator_next_epoch_protocol_pubkey<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
             p1: Arg<Vec<u8>>,
             p2: Arg<Vec<u8>>,
         ) {
@@ -2015,7 +2063,7 @@ pub mod sui_system {
         }
         pub fn update_validator_next_epoch_worker_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -2036,7 +2084,7 @@ pub mod sui_system {
         }
         pub fn update_validator_next_epoch_worker_pubkey<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -2055,7 +2103,7 @@ pub mod sui_system {
         }
         pub fn update_validator_project_url<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -2073,8 +2121,8 @@ pub mod sui_system {
         }
         pub fn validator_address_by_pool_id<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
-            p1: Ref<'a, sui_sdk_types::ObjectId>,
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
+            p1: Ref<'a, ObjectId>,
         ) -> Arg<Address> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -2092,8 +2140,8 @@ pub mod sui_system {
         }
         pub fn validator_voting_powers<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system::SuiSystemState>,
-        ) -> Arg<vec_map::VecMap<Address, u64>> {
+            p0: MutRef<'a, crate::sui_system::sui_system::SuiSystemState>,
+        ) -> Arg<crate::sui::vec_map::VecMap<Address, u64>> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -2109,7 +2157,10 @@ pub mod sui_system {
         }
     }
     pub mod sui_system_state_inner {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -2121,22 +2172,26 @@ pub mod sui_system {
             pub epoch: u64,
             pub protocol_version: u64,
             pub system_state_version: u64,
-            pub validators: validator_set::ValidatorSet,
-            pub storage_fund: storage_fund::StorageFund,
-            pub parameters: sui_system_state_inner::SystemParameters,
+            pub validators: crate::sui_system::validator_set::ValidatorSet,
+            pub storage_fund: crate::sui_system::storage_fund::StorageFund,
+            pub parameters: crate::sui_system::sui_system_state_inner::SystemParameters,
             pub reference_gas_price: u64,
-            pub validator_report_records: vec_map::VecMap<
+            pub validator_report_records: crate::sui::vec_map::VecMap<
                 Address,
-                vec_set::VecSet<Address>,
+                crate::sui::vec_set::VecSet<Address>,
             >,
-            pub stake_subsidy: stake_subsidy::StakeSubsidy,
+            pub stake_subsidy: crate::sui_system::stake_subsidy::StakeSubsidy,
             pub safe_mode: bool,
-            pub safe_mode_storage_rewards: balance::Balance<sui::SUI>,
-            pub safe_mode_computation_rewards: balance::Balance<sui::SUI>,
+            pub safe_mode_storage_rewards: crate::sui::balance::Balance<
+                crate::sui::sui::SUI,
+            >,
+            pub safe_mode_computation_rewards: crate::sui::balance::Balance<
+                crate::sui::sui::SUI,
+            >,
             pub safe_mode_storage_rebates: u64,
             pub safe_mode_non_refundable_storage_fee: u64,
             pub epoch_start_timestamp_ms: u64,
-            pub extra_fields: bag::Bag,
+            pub extra_fields: crate::sui::bag::Bag,
         }
         impl SuiSystemStateInner {
             pub const TYPE_ORIGIN_ID: Address = Address::new([
@@ -2150,22 +2205,26 @@ pub mod sui_system {
             pub epoch: u64,
             pub protocol_version: u64,
             pub system_state_version: u64,
-            pub validators: validator_set::ValidatorSet,
-            pub storage_fund: storage_fund::StorageFund,
-            pub parameters: sui_system_state_inner::SystemParametersV2,
+            pub validators: crate::sui_system::validator_set::ValidatorSet,
+            pub storage_fund: crate::sui_system::storage_fund::StorageFund,
+            pub parameters: crate::sui_system::sui_system_state_inner::SystemParametersV2,
             pub reference_gas_price: u64,
-            pub validator_report_records: vec_map::VecMap<
+            pub validator_report_records: crate::sui::vec_map::VecMap<
                 Address,
-                vec_set::VecSet<Address>,
+                crate::sui::vec_set::VecSet<Address>,
             >,
-            pub stake_subsidy: stake_subsidy::StakeSubsidy,
+            pub stake_subsidy: crate::sui_system::stake_subsidy::StakeSubsidy,
             pub safe_mode: bool,
-            pub safe_mode_storage_rewards: balance::Balance<sui::SUI>,
-            pub safe_mode_computation_rewards: balance::Balance<sui::SUI>,
+            pub safe_mode_storage_rewards: crate::sui::balance::Balance<
+                crate::sui::sui::SUI,
+            >,
+            pub safe_mode_computation_rewards: crate::sui::balance::Balance<
+                crate::sui::sui::SUI,
+            >,
             pub safe_mode_storage_rebates: u64,
             pub safe_mode_non_refundable_storage_fee: u64,
             pub epoch_start_timestamp_ms: u64,
-            pub extra_fields: bag::Bag,
+            pub extra_fields: crate::sui::bag::Bag,
         }
         impl SuiSystemStateInnerV2 {
             pub const TYPE_ORIGIN_ID: Address = Address::new([
@@ -2205,7 +2264,7 @@ pub mod sui_system {
             pub validator_low_stake_threshold: u64,
             pub validator_very_low_stake_threshold: u64,
             pub validator_low_stake_grace_period: u64,
-            pub extra_fields: bag::Bag,
+            pub extra_fields: crate::sui::bag::Bag,
         }
         impl SystemParameters {
             pub const TYPE_ORIGIN_ID: Address = Address::new([
@@ -2224,7 +2283,7 @@ pub mod sui_system {
             pub validator_low_stake_threshold: u64,
             pub validator_very_low_stake_threshold: u64,
             pub validator_low_stake_grace_period: u64,
-            pub extra_fields: bag::Bag,
+            pub extra_fields: crate::sui::bag::Bag,
         }
         impl SystemParametersV2 {
             pub const TYPE_ORIGIN_ID: Address = Address::new([
@@ -2235,7 +2294,7 @@ pub mod sui_system {
         }
         pub fn active_validator_addresses<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: Ref<'a, crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2>,
         ) -> Arg<Vec<Address>> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -2252,8 +2311,8 @@ pub mod sui_system {
         }
         pub fn active_validator_voting_powers<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
-        ) -> Arg<vec_map::VecMap<Address, u64>> {
+            p0: Ref<'a, crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2>,
+        ) -> Arg<crate::sui::vec_map::VecMap<Address, u64>> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -2269,17 +2328,20 @@ pub mod sui_system {
         }
         pub fn advance_epoch<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
             p1: Arg<u64>,
             p2: Arg<u64>,
-            p3: Arg<balance::Balance<sui::SUI>>,
-            p4: Arg<balance::Balance<sui::SUI>>,
+            p3: Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>>,
+            p4: Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>>,
             p5: Arg<u64>,
             p6: Arg<u64>,
             p7: Arg<u64>,
             p8: Arg<u64>,
             p9: Arg<u64>,
-        ) -> Arg<balance::Balance<sui::SUI>> {
+        ) -> Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -2307,9 +2369,12 @@ pub mod sui_system {
         }
         pub fn convert_to_fungible_staked_sui<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
-            p1: Arg<staking_pool::StakedSui>,
-        ) -> Arg<staking_pool::FungibleStakedSui> {
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
+            p1: Arg<crate::sui_system::staking_pool::StakedSui>,
+        ) -> Arg<crate::sui_system::staking_pool::FungibleStakedSui> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -2326,13 +2391,13 @@ pub mod sui_system {
         }
         pub fn create<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<Vec<validator::Validator>>,
-            p1: Arg<balance::Balance<sui::SUI>>,
+            p0: Arg<Vec<crate::sui_system::validator::Validator>>,
+            p1: Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>>,
             p2: Arg<u64>,
             p3: Arg<u64>,
-            p4: Arg<sui_system_state_inner::SystemParameters>,
-            p5: Arg<stake_subsidy::StakeSubsidy>,
-        ) -> Arg<sui_system_state_inner::SuiSystemStateInner> {
+            p4: Arg<crate::sui_system::sui_system_state_inner::SystemParameters>,
+            p5: Arg<crate::sui_system::stake_subsidy::StakeSubsidy>,
+        ) -> Arg<crate::sui_system::sui_system_state_inner::SuiSystemStateInner> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -2362,7 +2427,7 @@ pub mod sui_system {
             p4: Arg<u64>,
             p5: Arg<u64>,
             p6: Arg<u64>,
-        ) -> Arg<sui_system_state_inner::SystemParameters> {
+        ) -> Arg<crate::sui_system::sui_system_state_inner::SystemParameters> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -2387,7 +2452,7 @@ pub mod sui_system {
         }
         pub fn epoch<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: Ref<'a, crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -2404,7 +2469,7 @@ pub mod sui_system {
         }
         pub fn epoch_start_timestamp_ms<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: Ref<'a, crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -2421,9 +2486,9 @@ pub mod sui_system {
         }
         pub fn extract_coin_balance<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<Vec<coin::Coin<sui::SUI>>>,
+            p0: Arg<Vec<crate::sui::coin::Coin<crate::sui::sui::SUI>>>,
             p1: Arg<Option<u64>>,
-        ) -> Arg<balance::Balance<sui::SUI>> {
+        ) -> Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -2455,9 +2520,12 @@ pub mod sui_system {
         }
         pub fn get_reporters_of<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: Ref<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
             p1: Arg<Address>,
-        ) -> Arg<vec_set::VecSet<Address>> {
+        ) -> Arg<crate::sui::vec_set::VecSet<Address>> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -2474,7 +2542,7 @@ pub mod sui_system {
         }
         pub fn get_storage_fund_object_rebates<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: Ref<'a, crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -2491,7 +2559,7 @@ pub mod sui_system {
         }
         pub fn get_storage_fund_total_balance<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: Ref<'a, crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -2508,9 +2576,18 @@ pub mod sui_system {
         }
         pub fn pool_exchange_rates<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
-            p1: Ref<'a, sui_sdk_types::ObjectId>,
-        ) -> Ref<'a, table::Table<u64, staking_pool::PoolTokenExchangeRate>> {
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
+            p1: Ref<'a, ObjectId>,
+        ) -> Ref<
+            'a,
+            crate::sui::table::Table<
+                u64,
+                crate::sui_system::staking_pool::PoolTokenExchangeRate,
+            >,
+        > {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -2527,7 +2604,7 @@ pub mod sui_system {
         }
         pub fn protocol_version<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: Ref<'a, crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -2544,9 +2621,12 @@ pub mod sui_system {
         }
         pub fn redeem_fungible_staked_sui<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
-            p1: Arg<staking_pool::FungibleStakedSui>,
-        ) -> Arg<balance::Balance<sui::SUI>> {
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
+            p1: Arg<crate::sui_system::staking_pool::FungibleStakedSui>,
+        ) -> Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -2563,8 +2643,14 @@ pub mod sui_system {
         }
         pub fn report_validator<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
-            p1: Ref<'a, validator_cap::UnverifiedValidatorOperationCap>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
+            p1: Ref<
+                'a,
+                crate::sui_system::validator_cap::UnverifiedValidatorOperationCap,
+            >,
             p2: Arg<Address>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -2583,9 +2669,15 @@ pub mod sui_system {
         }
         pub fn report_validator_impl<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<validator_cap::ValidatorOperationCap>,
+            p0: Arg<crate::sui_system::validator_cap::ValidatorOperationCap>,
             p1: Arg<Address>,
-            p2: MutRef<'a, vec_map::VecMap<Address, vec_set::VecSet<Address>>>,
+            p2: MutRef<
+                'a,
+                crate::sui::vec_map::VecMap<
+                    Address,
+                    crate::sui::vec_set::VecSet<Address>,
+                >,
+            >,
         ) {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -2603,10 +2695,13 @@ pub mod sui_system {
         }
         pub fn request_add_stake<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
-            p1: Arg<coin::Coin<sui::SUI>>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
+            p1: Arg<crate::sui::coin::Coin<crate::sui::sui::SUI>>,
             p2: Arg<Address>,
-        ) -> Arg<staking_pool::StakedSui> {
+        ) -> Arg<crate::sui_system::staking_pool::StakedSui> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -2624,11 +2719,14 @@ pub mod sui_system {
         }
         pub fn request_add_stake_mul_coin<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
-            p1: Arg<Vec<coin::Coin<sui::SUI>>>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
+            p1: Arg<Vec<crate::sui::coin::Coin<crate::sui::sui::SUI>>>,
             p2: Arg<Option<u64>>,
             p3: Arg<Address>,
-        ) -> Arg<staking_pool::StakedSui> {
+        ) -> Arg<crate::sui_system::staking_pool::StakedSui> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -2647,7 +2745,10 @@ pub mod sui_system {
         }
         pub fn request_add_validator<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
         ) {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -2663,7 +2764,10 @@ pub mod sui_system {
         }
         pub fn request_add_validator_candidate<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
             p1: Arg<Vec<u8>>,
             p2: Arg<Vec<u8>>,
             p3: Arg<Vec<u8>>,
@@ -2711,7 +2815,10 @@ pub mod sui_system {
         }
         pub fn request_remove_validator<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
         ) {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -2727,7 +2834,10 @@ pub mod sui_system {
         }
         pub fn request_remove_validator_candidate<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
         ) {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -2744,7 +2854,10 @@ pub mod sui_system {
         }
         pub fn request_set_commission_rate<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
             p1: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -2762,8 +2875,14 @@ pub mod sui_system {
         }
         pub fn request_set_gas_price<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
-            p1: Ref<'a, validator_cap::UnverifiedValidatorOperationCap>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
+            p1: Ref<
+                'a,
+                crate::sui_system::validator_cap::UnverifiedValidatorOperationCap,
+            >,
             p2: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -2782,9 +2901,12 @@ pub mod sui_system {
         }
         pub fn request_withdraw_stake<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
-            p1: Arg<staking_pool::StakedSui>,
-        ) -> Arg<balance::Balance<sui::SUI>> {
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
+            p1: Arg<crate::sui_system::staking_pool::StakedSui>,
+        ) -> Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -2801,7 +2923,10 @@ pub mod sui_system {
         }
         pub fn rotate_operation_cap<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
         ) {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -2817,7 +2942,10 @@ pub mod sui_system {
         }
         pub fn set_candidate_validator_commission_rate<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
             p1: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -2836,8 +2964,14 @@ pub mod sui_system {
         }
         pub fn set_candidate_validator_gas_price<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
-            p1: Ref<'a, validator_cap::UnverifiedValidatorOperationCap>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
+            p1: Ref<
+                'a,
+                crate::sui_system::validator_cap::UnverifiedValidatorOperationCap,
+            >,
             p2: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -2857,7 +2991,10 @@ pub mod sui_system {
         }
         pub fn store_execution_time_estimates<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -2875,7 +3012,7 @@ pub mod sui_system {
         }
         pub fn system_state_version<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: Ref<'a, crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -2892,8 +3029,14 @@ pub mod sui_system {
         }
         pub fn undo_report_validator<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
-            p1: Ref<'a, validator_cap::UnverifiedValidatorOperationCap>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
+            p1: Ref<
+                'a,
+                crate::sui_system::validator_cap::UnverifiedValidatorOperationCap,
+            >,
             p2: Arg<Address>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -2912,9 +3055,15 @@ pub mod sui_system {
         }
         pub fn undo_report_validator_impl<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<validator_cap::ValidatorOperationCap>,
+            p0: Arg<crate::sui_system::validator_cap::ValidatorOperationCap>,
             p1: Arg<Address>,
-            p2: MutRef<'a, vec_map::VecMap<Address, vec_set::VecSet<Address>>>,
+            p2: MutRef<
+                'a,
+                crate::sui::vec_map::VecMap<
+                    Address,
+                    crate::sui::vec_set::VecSet<Address>,
+                >,
+            >,
         ) {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -2932,7 +3081,10 @@ pub mod sui_system {
         }
         pub fn update_candidate_validator_network_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -2953,7 +3105,10 @@ pub mod sui_system {
         }
         pub fn update_candidate_validator_network_pubkey<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -2972,7 +3127,10 @@ pub mod sui_system {
         }
         pub fn update_candidate_validator_p2p_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -2991,7 +3149,10 @@ pub mod sui_system {
         }
         pub fn update_candidate_validator_primary_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -3012,7 +3173,10 @@ pub mod sui_system {
         }
         pub fn update_candidate_validator_protocol_pubkey<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
             p1: Arg<Vec<u8>>,
             p2: Arg<Vec<u8>>,
         ) {
@@ -3035,7 +3199,10 @@ pub mod sui_system {
         }
         pub fn update_candidate_validator_worker_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -3054,7 +3221,10 @@ pub mod sui_system {
         }
         pub fn update_candidate_validator_worker_pubkey<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -3073,7 +3243,10 @@ pub mod sui_system {
         }
         pub fn update_validator_description<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -3091,7 +3264,10 @@ pub mod sui_system {
         }
         pub fn update_validator_image_url<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -3109,7 +3285,10 @@ pub mod sui_system {
         }
         pub fn update_validator_name<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -3127,7 +3306,10 @@ pub mod sui_system {
         }
         pub fn update_validator_next_epoch_network_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -3148,7 +3330,10 @@ pub mod sui_system {
         }
         pub fn update_validator_next_epoch_network_pubkey<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -3169,7 +3354,10 @@ pub mod sui_system {
         }
         pub fn update_validator_next_epoch_p2p_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -3188,7 +3376,10 @@ pub mod sui_system {
         }
         pub fn update_validator_next_epoch_primary_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -3209,7 +3400,10 @@ pub mod sui_system {
         }
         pub fn update_validator_next_epoch_protocol_pubkey<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
             p1: Arg<Vec<u8>>,
             p2: Arg<Vec<u8>>,
         ) {
@@ -3232,7 +3426,10 @@ pub mod sui_system {
         }
         pub fn update_validator_next_epoch_worker_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -3253,7 +3450,10 @@ pub mod sui_system {
         }
         pub fn update_validator_next_epoch_worker_pubkey<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -3272,7 +3472,10 @@ pub mod sui_system {
         }
         pub fn update_validator_project_url<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -3290,8 +3493,8 @@ pub mod sui_system {
         }
         pub fn v1_to_v2(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<sui_system_state_inner::SuiSystemStateInner>,
-        ) -> Arg<sui_system_state_inner::SuiSystemStateInnerV2> {
+            p0: Arg<crate::sui_system::sui_system_state_inner::SuiSystemStateInner>,
+        ) -> Arg<crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -3307,8 +3510,11 @@ pub mod sui_system {
         }
         pub fn validator_address_by_pool_id<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
-            p1: Ref<'a, sui_sdk_types::ObjectId>,
+            p0: MutRef<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
+            p1: Ref<'a, ObjectId>,
         ) -> Arg<Address> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -3326,7 +3532,10 @@ pub mod sui_system {
         }
         pub fn validator_stake_amount<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: Ref<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
             p1: Arg<Address>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
@@ -3345,9 +3554,12 @@ pub mod sui_system {
         }
         pub fn validator_staking_pool_id<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
+            p0: Ref<
+                'a,
+                crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2,
+            >,
             p1: Arg<Address>,
-        ) -> Arg<sui_sdk_types::ObjectId> {
+        ) -> Arg<ObjectId> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -3364,8 +3576,8 @@ pub mod sui_system {
         }
         pub fn validator_staking_pool_mappings<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, sui_system_state_inner::SuiSystemStateInnerV2>,
-        ) -> Ref<'a, table::Table<sui_sdk_types::ObjectId, Address>> {
+            p0: Ref<'a, crate::sui_system::sui_system_state_inner::SuiSystemStateInnerV2>,
+        ) -> Ref<'a, crate::sui::table::Table<ObjectId, Address>> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -3381,7 +3593,10 @@ pub mod sui_system {
         }
     }
     pub mod validator {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -3390,7 +3605,7 @@ pub mod sui_system {
         pub const MODULE_NAME: &str = "validator";
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct)]
         pub struct ConvertingToFungibleStakedSuiEvent {
-            pub pool_id: sui_sdk_types::ObjectId,
+            pub pool_id: ObjectId,
             pub stake_activation_epoch: u64,
             pub staked_sui_principal_amount: u64,
             pub fungible_staked_sui_amount: u64,
@@ -3404,7 +3619,7 @@ pub mod sui_system {
         }
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct)]
         pub struct RedeemingFungibleStakedSuiEvent {
-            pub pool_id: sui_sdk_types::ObjectId,
+            pub pool_id: ObjectId,
             pub fungible_staked_sui_amount: u64,
             pub sui_amount: u64,
         }
@@ -3417,7 +3632,7 @@ pub mod sui_system {
         }
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct)]
         pub struct StakingRequestEvent {
-            pub pool_id: sui_sdk_types::ObjectId,
+            pub pool_id: ObjectId,
             pub validator_address: Address,
             pub staker_address: Address,
             pub epoch: u64,
@@ -3432,7 +3647,7 @@ pub mod sui_system {
         }
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct)]
         pub struct UnstakingRequestEvent {
-            pub pool_id: sui_sdk_types::ObjectId,
+            pub pool_id: ObjectId,
             pub validator_address: Address,
             pub staker_address: Address,
             pub stake_activation_epoch: u64,
@@ -3449,16 +3664,16 @@ pub mod sui_system {
         }
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct)]
         pub struct Validator {
-            pub metadata: validator::ValidatorMetadata,
+            pub metadata: crate::sui_system::validator::ValidatorMetadata,
             pub voting_power: u64,
-            pub operation_cap_id: sui_sdk_types::ObjectId,
+            pub operation_cap_id: ObjectId,
             pub gas_price: u64,
-            pub staking_pool: staking_pool::StakingPool,
+            pub staking_pool: crate::sui_system::staking_pool::StakingPool,
             pub commission_rate: u64,
             pub next_epoch_stake: u64,
             pub next_epoch_gas_price: u64,
             pub next_epoch_commission_rate: u64,
-            pub extra_fields: bag::Bag,
+            pub extra_fields: crate::sui::bag::Bag,
         }
         impl Validator {
             pub const TYPE_ORIGIN_ID: Address = Address::new([
@@ -3476,8 +3691,8 @@ pub mod sui_system {
             pub proof_of_possession: Vec<u8>,
             pub name: String,
             pub description: String,
-            pub image_url: url::Url,
-            pub project_url: url::Url,
+            pub image_url: crate::sui::url::Url,
+            pub project_url: crate::sui::url::Url,
             pub net_address: String,
             pub p2p_address: String,
             pub primary_address: String,
@@ -3490,7 +3705,7 @@ pub mod sui_system {
             pub next_epoch_p2p_address: Option<String>,
             pub next_epoch_primary_address: Option<String>,
             pub next_epoch_worker_address: Option<String>,
-            pub extra_fields: bag::Bag,
+            pub extra_fields: crate::sui::bag::Bag,
         }
         impl ValidatorMetadata {
             pub const TYPE_ORIGIN_ID: Address = Address::new([
@@ -3501,7 +3716,7 @@ pub mod sui_system {
         }
         pub fn activate<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
             p1: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -3519,7 +3734,7 @@ pub mod sui_system {
         }
         pub fn adjust_stake_and_gas_price<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
         ) {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -3535,7 +3750,7 @@ pub mod sui_system {
         }
         pub fn commission_rate<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -3552,9 +3767,9 @@ pub mod sui_system {
         }
         pub fn convert_to_fungible_staked_sui<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
-            p1: Arg<staking_pool::StakedSui>,
-        ) -> Arg<staking_pool::FungibleStakedSui> {
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
+            p1: Arg<crate::sui_system::staking_pool::StakedSui>,
+        ) -> Arg<crate::sui_system::staking_pool::FungibleStakedSui> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -3571,7 +3786,7 @@ pub mod sui_system {
         }
         pub fn deactivate<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
             p1: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -3589,8 +3804,8 @@ pub mod sui_system {
         }
         pub fn deposit_stake_rewards<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
-            p1: Arg<balance::Balance<sui::SUI>>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
+            p1: Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>>,
         ) {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -3607,7 +3822,7 @@ pub mod sui_system {
         }
         pub fn description<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Ref<'a, String> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -3624,7 +3839,7 @@ pub mod sui_system {
         }
         pub fn effectuate_staged_metadata<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
         ) {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -3640,7 +3855,7 @@ pub mod sui_system {
         }
         pub fn gas_price<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -3657,8 +3872,8 @@ pub mod sui_system {
         }
         pub fn get_staking_pool_ref<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
-        ) -> Ref<'a, staking_pool::StakingPool> {
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
+        ) -> Ref<'a, crate::sui_system::staking_pool::StakingPool> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -3674,8 +3889,8 @@ pub mod sui_system {
         }
         pub fn image_url<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
-        ) -> Ref<'a, url::Url> {
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
+        ) -> Ref<'a, crate::sui::url::Url> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -3691,8 +3906,8 @@ pub mod sui_system {
         }
         pub fn is_duplicate<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
-            p1: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
+            p1: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -3748,7 +3963,7 @@ pub mod sui_system {
         }
         pub fn is_preactive<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -3765,8 +3980,8 @@ pub mod sui_system {
         }
         pub fn metadata<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
-        ) -> Ref<'a, validator::ValidatorMetadata> {
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
+        ) -> Ref<'a, crate::sui_system::validator::ValidatorMetadata> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -3782,7 +3997,7 @@ pub mod sui_system {
         }
         pub fn name<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Ref<'a, String> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -3799,7 +4014,7 @@ pub mod sui_system {
         }
         pub fn network_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Ref<'a, String> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -3816,7 +4031,7 @@ pub mod sui_system {
         }
         pub fn network_pubkey_bytes<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Ref<'a, Vec<u8>> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -3848,7 +4063,7 @@ pub mod sui_system {
             p12: Arg<Vec<u8>>,
             p13: Arg<u64>,
             p14: Arg<u64>,
-        ) -> Arg<validator::Validator> {
+        ) -> Arg<crate::sui_system::validator::Validator> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -3882,10 +4097,10 @@ pub mod sui_system {
         }
         pub fn new_from_metadata<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<validator::ValidatorMetadata>,
+            p0: Arg<crate::sui_system::validator::ValidatorMetadata>,
             p1: Arg<u64>,
             p2: Arg<u64>,
-        ) -> Arg<validator::Validator> {
+        ) -> Arg<crate::sui_system::validator::Validator> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -3910,14 +4125,14 @@ pub mod sui_system {
             p4: Arg<Vec<u8>>,
             p5: Arg<String>,
             p6: Arg<String>,
-            p7: Arg<url::Url>,
-            p8: Arg<url::Url>,
+            p7: Arg<crate::sui::url::Url>,
+            p8: Arg<crate::sui::url::Url>,
             p9: Arg<String>,
             p10: Arg<String>,
             p11: Arg<String>,
             p12: Arg<String>,
-            p13: Arg<bag::Bag>,
-        ) -> Arg<validator::ValidatorMetadata> {
+            p13: Arg<crate::sui::bag::Bag>,
+        ) -> Arg<crate::sui_system::validator::ValidatorMetadata> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -3950,7 +4165,7 @@ pub mod sui_system {
         }
         pub fn new_unverified_validator_operation_cap_and_transfer<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
         ) {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -3969,7 +4184,7 @@ pub mod sui_system {
         }
         pub fn next_epoch_gas_price<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -3986,7 +4201,7 @@ pub mod sui_system {
         }
         pub fn next_epoch_network_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Ref<'a, Option<String>> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -4003,7 +4218,7 @@ pub mod sui_system {
         }
         pub fn next_epoch_network_pubkey_bytes<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Ref<'a, Option<Vec<u8>>> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -4020,7 +4235,7 @@ pub mod sui_system {
         }
         pub fn next_epoch_p2p_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Ref<'a, Option<String>> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -4037,7 +4252,7 @@ pub mod sui_system {
         }
         pub fn next_epoch_primary_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Ref<'a, Option<String>> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -4054,7 +4269,7 @@ pub mod sui_system {
         }
         pub fn next_epoch_proof_of_possession<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Ref<'a, Option<Vec<u8>>> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -4071,7 +4286,7 @@ pub mod sui_system {
         }
         pub fn next_epoch_protocol_pubkey_bytes<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Ref<'a, Option<Vec<u8>>> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -4089,7 +4304,7 @@ pub mod sui_system {
         }
         pub fn next_epoch_worker_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Ref<'a, Option<String>> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -4106,7 +4321,7 @@ pub mod sui_system {
         }
         pub fn next_epoch_worker_pubkey_bytes<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Ref<'a, Option<Vec<u8>>> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -4123,8 +4338,8 @@ pub mod sui_system {
         }
         pub fn operation_cap_id<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
-        ) -> Ref<'a, sui_sdk_types::ObjectId> {
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
+        ) -> Ref<'a, ObjectId> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -4140,7 +4355,7 @@ pub mod sui_system {
         }
         pub fn p2p_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Ref<'a, String> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -4157,7 +4372,7 @@ pub mod sui_system {
         }
         pub fn pending_stake_amount<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -4174,7 +4389,7 @@ pub mod sui_system {
         }
         pub fn pending_stake_withdraw_amount<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -4191,9 +4406,9 @@ pub mod sui_system {
         }
         pub fn pool_token_exchange_rate_at_epoch<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
             p1: Arg<u64>,
-        ) -> Arg<staking_pool::PoolTokenExchangeRate> {
+        ) -> Arg<crate::sui_system::staking_pool::PoolTokenExchangeRate> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -4211,7 +4426,7 @@ pub mod sui_system {
         }
         pub fn primary_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Ref<'a, String> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -4228,7 +4443,7 @@ pub mod sui_system {
         }
         pub fn process_pending_stakes_and_withdraws<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
         ) {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -4245,8 +4460,8 @@ pub mod sui_system {
         }
         pub fn project_url<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
-        ) -> Ref<'a, url::Url> {
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
+        ) -> Ref<'a, crate::sui::url::Url> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -4262,7 +4477,7 @@ pub mod sui_system {
         }
         pub fn proof_of_possession<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Ref<'a, Vec<u8>> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -4279,7 +4494,7 @@ pub mod sui_system {
         }
         pub fn protocol_pubkey_bytes<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Ref<'a, Vec<u8>> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -4296,9 +4511,9 @@ pub mod sui_system {
         }
         pub fn redeem_fungible_staked_sui<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
-            p1: Arg<staking_pool::FungibleStakedSui>,
-        ) -> Arg<balance::Balance<sui::SUI>> {
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
+            p1: Arg<crate::sui_system::staking_pool::FungibleStakedSui>,
+        ) -> Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -4315,10 +4530,10 @@ pub mod sui_system {
         }
         pub fn request_add_stake<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
-            p1: Arg<balance::Balance<sui::SUI>>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
+            p1: Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>>,
             p2: Arg<Address>,
-        ) -> Arg<staking_pool::StakedSui> {
+        ) -> Arg<crate::sui_system::staking_pool::StakedSui> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -4336,8 +4551,8 @@ pub mod sui_system {
         }
         pub fn request_add_stake_at_genesis<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
-            p1: Arg<balance::Balance<sui::SUI>>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
+            p1: Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>>,
             p2: Arg<Address>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -4356,7 +4571,7 @@ pub mod sui_system {
         }
         pub fn request_set_commission_rate<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
             p1: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -4374,8 +4589,8 @@ pub mod sui_system {
         }
         pub fn request_set_gas_price<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
-            p1: Arg<validator_cap::ValidatorOperationCap>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
+            p1: Arg<crate::sui_system::validator_cap::ValidatorOperationCap>,
             p2: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -4394,9 +4609,9 @@ pub mod sui_system {
         }
         pub fn request_withdraw_stake<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
-            p1: Arg<staking_pool::StakedSui>,
-        ) -> Arg<balance::Balance<sui::SUI>> {
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
+            p1: Arg<crate::sui_system::staking_pool::StakedSui>,
+        ) -> Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -4413,7 +4628,7 @@ pub mod sui_system {
         }
         pub fn set_candidate_commission_rate<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
             p1: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -4431,8 +4646,8 @@ pub mod sui_system {
         }
         pub fn set_candidate_gas_price<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
-            p1: Arg<validator_cap::ValidatorOperationCap>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
+            p1: Arg<crate::sui_system::validator_cap::ValidatorOperationCap>,
             p2: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -4451,7 +4666,7 @@ pub mod sui_system {
         }
         pub fn set_voting_power<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
             p1: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -4469,7 +4684,7 @@ pub mod sui_system {
         }
         pub fn stake_amount<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -4486,8 +4701,8 @@ pub mod sui_system {
         }
         pub fn staking_pool_id<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
-        ) -> Arg<sui_sdk_types::ObjectId> {
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
+        ) -> Arg<ObjectId> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -4503,7 +4718,7 @@ pub mod sui_system {
         }
         pub fn sui_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Arg<Address> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -4520,7 +4735,7 @@ pub mod sui_system {
         }
         pub fn total_stake<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -4537,7 +4752,7 @@ pub mod sui_system {
         }
         pub fn total_stake_amount<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -4554,7 +4769,7 @@ pub mod sui_system {
         }
         pub fn update_candidate_network_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -4573,7 +4788,7 @@ pub mod sui_system {
         }
         pub fn update_candidate_network_pubkey<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -4591,7 +4806,7 @@ pub mod sui_system {
         }
         pub fn update_candidate_p2p_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -4609,7 +4824,7 @@ pub mod sui_system {
         }
         pub fn update_candidate_primary_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -4628,7 +4843,7 @@ pub mod sui_system {
         }
         pub fn update_candidate_protocol_pubkey<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
             p1: Arg<Vec<u8>>,
             p2: Arg<Vec<u8>>,
         ) {
@@ -4649,7 +4864,7 @@ pub mod sui_system {
         }
         pub fn update_candidate_worker_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -4667,7 +4882,7 @@ pub mod sui_system {
         }
         pub fn update_candidate_worker_pubkey<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -4685,7 +4900,7 @@ pub mod sui_system {
         }
         pub fn update_description<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -4703,7 +4918,7 @@ pub mod sui_system {
         }
         pub fn update_image_url<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -4721,7 +4936,7 @@ pub mod sui_system {
         }
         pub fn update_name<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -4739,7 +4954,7 @@ pub mod sui_system {
         }
         pub fn update_next_epoch_network_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -4758,7 +4973,7 @@ pub mod sui_system {
         }
         pub fn update_next_epoch_network_pubkey<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -4777,7 +4992,7 @@ pub mod sui_system {
         }
         pub fn update_next_epoch_p2p_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -4795,7 +5010,7 @@ pub mod sui_system {
         }
         pub fn update_next_epoch_primary_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -4814,7 +5029,7 @@ pub mod sui_system {
         }
         pub fn update_next_epoch_protocol_pubkey<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
             p1: Arg<Vec<u8>>,
             p2: Arg<Vec<u8>>,
         ) {
@@ -4835,7 +5050,7 @@ pub mod sui_system {
         }
         pub fn update_next_epoch_worker_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -4854,7 +5069,7 @@ pub mod sui_system {
         }
         pub fn update_next_epoch_worker_pubkey<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -4872,7 +5087,7 @@ pub mod sui_system {
         }
         pub fn update_project_url<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator::Validator>,
             p1: Arg<Vec<u8>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -4890,7 +5105,7 @@ pub mod sui_system {
         }
         pub fn validate_metadata<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::ValidatorMetadata>,
+            p0: Ref<'a, crate::sui_system::validator::ValidatorMetadata>,
         ) {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -4922,7 +5137,7 @@ pub mod sui_system {
         }
         pub fn voting_power<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -4939,7 +5154,7 @@ pub mod sui_system {
         }
         pub fn worker_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Ref<'a, String> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -4956,7 +5171,7 @@ pub mod sui_system {
         }
         pub fn worker_pubkey_bytes<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Ref<'a, Vec<u8>> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -4973,7 +5188,10 @@ pub mod sui_system {
         }
     }
     pub mod validator_cap {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -4982,7 +5200,7 @@ pub mod sui_system {
         pub const MODULE_NAME: &str = "validator_cap";
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct, Key)]
         pub struct UnverifiedValidatorOperationCap {
-            pub id: sui_sdk_types::ObjectId,
+            pub id: ObjectId,
             pub authorizer_validator_address: Address,
         }
         impl UnverifiedValidatorOperationCap {
@@ -5005,8 +5223,11 @@ pub mod sui_system {
         }
         pub fn new_from_unverified<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_cap::UnverifiedValidatorOperationCap>,
-        ) -> Arg<validator_cap::ValidatorOperationCap> {
+            p0: Ref<
+                'a,
+                crate::sui_system::validator_cap::UnverifiedValidatorOperationCap,
+            >,
+        ) -> Arg<crate::sui_system::validator_cap::ValidatorOperationCap> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -5023,7 +5244,7 @@ pub mod sui_system {
         pub fn new_unverified_validator_operation_cap_and_transfer<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
             p0: Arg<Address>,
-        ) -> Arg<sui_sdk_types::ObjectId> {
+        ) -> Arg<ObjectId> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -5042,7 +5263,10 @@ pub mod sui_system {
         }
         pub fn unverified_operation_cap_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_cap::UnverifiedValidatorOperationCap>,
+            p0: Ref<
+                'a,
+                crate::sui_system::validator_cap::UnverifiedValidatorOperationCap,
+            >,
         ) -> Ref<'a, Address> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -5060,7 +5284,7 @@ pub mod sui_system {
         }
         pub fn verified_operation_cap_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_cap::ValidatorOperationCap>,
+            p0: Ref<'a, crate::sui_system::validator_cap::ValidatorOperationCap>,
         ) -> Ref<'a, Address> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -5077,7 +5301,10 @@ pub mod sui_system {
         }
     }
     pub mod validator_set {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -5093,7 +5320,7 @@ pub mod sui_system {
             pub commission_rate: u64,
             pub pool_staking_reward: u64,
             pub storage_fund_staking_reward: u64,
-            pub pool_token_exchange_rate: staking_pool::PoolTokenExchangeRate,
+            pub pool_token_exchange_rate: crate::sui_system::staking_pool::PoolTokenExchangeRate,
             pub tallying_rule_reporters: Vec<Address>,
             pub tallying_rule_global_score: u64,
         }
@@ -5114,7 +5341,7 @@ pub mod sui_system {
             pub commission_rate: u64,
             pub pool_staking_reward: u64,
             pub storage_fund_staking_reward: u64,
-            pub pool_token_exchange_rate: staking_pool::PoolTokenExchangeRate,
+            pub pool_token_exchange_rate: crate::sui_system::staking_pool::PoolTokenExchangeRate,
             pub tallying_rule_reporters: Vec<Address>,
             pub tallying_rule_global_score: u64,
         }
@@ -5129,7 +5356,7 @@ pub mod sui_system {
         pub struct ValidatorJoinEvent {
             pub epoch: u64,
             pub validator_address: Address,
-            pub staking_pool_id: sui_sdk_types::ObjectId,
+            pub staking_pool_id: ObjectId,
         }
         impl ValidatorJoinEvent {
             pub const TYPE_ORIGIN_ID: Address = Address::new([
@@ -5142,7 +5369,7 @@ pub mod sui_system {
         pub struct ValidatorLeaveEvent {
             pub epoch: u64,
             pub validator_address: Address,
-            pub staking_pool_id: sui_sdk_types::ObjectId,
+            pub staking_pool_id: ObjectId,
             pub is_voluntary: bool,
         }
         impl ValidatorLeaveEvent {
@@ -5155,20 +5382,22 @@ pub mod sui_system {
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct)]
         pub struct ValidatorSet {
             pub total_stake: u64,
-            pub active_validators: Vec<validator::Validator>,
-            pub pending_active_validators: table_vec::TableVec<validator::Validator>,
+            pub active_validators: Vec<crate::sui_system::validator::Validator>,
+            pub pending_active_validators: crate::sui::table_vec::TableVec<
+                crate::sui_system::validator::Validator,
+            >,
             pub pending_removals: Vec<u64>,
-            pub staking_pool_mappings: table::Table<sui_sdk_types::ObjectId, Address>,
-            pub inactive_validators: table::Table<
-                sui_sdk_types::ObjectId,
-                validator_wrapper::ValidatorWrapper,
+            pub staking_pool_mappings: crate::sui::table::Table<ObjectId, Address>,
+            pub inactive_validators: crate::sui::table::Table<
+                ObjectId,
+                crate::sui_system::validator_wrapper::ValidatorWrapper,
             >,
-            pub validator_candidates: table::Table<
+            pub validator_candidates: crate::sui::table::Table<
                 Address,
-                validator_wrapper::ValidatorWrapper,
+                crate::sui_system::validator_wrapper::ValidatorWrapper,
             >,
-            pub at_risk_validators: vec_map::VecMap<Address, u64>,
-            pub extra_fields: bag::Bag,
+            pub at_risk_validators: crate::sui::vec_map::VecMap<Address, u64>,
+            pub extra_fields: crate::sui::bag::Bag,
         }
         impl ValidatorSet {
             pub const TYPE_ORIGIN_ID: Address = Address::new([
@@ -5190,7 +5419,7 @@ pub mod sui_system {
         }
         pub fn active_validator_addresses<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_set::ValidatorSet>,
+            p0: Ref<'a, crate::sui_system::validator_set::ValidatorSet>,
         ) -> Arg<Vec<Address>> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -5207,8 +5436,8 @@ pub mod sui_system {
         }
         pub fn active_validators<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_set::ValidatorSet>,
-        ) -> Ref<'a, Vec<validator::Validator>> {
+            p0: Ref<'a, crate::sui_system::validator_set::ValidatorSet>,
+        ) -> Ref<'a, Vec<crate::sui_system::validator::Validator>> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -5224,7 +5453,7 @@ pub mod sui_system {
         }
         pub fn adjust_stake_and_gas_price<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, Vec<validator::Validator>>,
+            p0: MutRef<'a, Vec<crate::sui_system::validator::Validator>>,
         ) {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -5240,10 +5469,16 @@ pub mod sui_system {
         }
         pub fn advance_epoch<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator_set::ValidatorSet>,
-            p1: MutRef<'a, balance::Balance<sui::SUI>>,
-            p2: MutRef<'a, balance::Balance<sui::SUI>>,
-            p3: MutRef<'a, vec_map::VecMap<Address, vec_set::VecSet<Address>>>,
+            p0: MutRef<'a, crate::sui_system::validator_set::ValidatorSet>,
+            p1: MutRef<'a, crate::sui::balance::Balance<crate::sui::sui::SUI>>,
+            p2: MutRef<'a, crate::sui::balance::Balance<crate::sui::sui::SUI>>,
+            p3: MutRef<
+                'a,
+                crate::sui::vec_map::VecMap<
+                    Address,
+                    crate::sui::vec_set::VecSet<Address>,
+                >,
+            >,
             p4: Arg<u64>,
             p5: Arg<u64>,
         ) {
@@ -5268,8 +5503,8 @@ pub mod sui_system {
         }
         pub fn assert_no_pending_or_active_duplicates<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_set::ValidatorSet>,
-            p1: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator_set::ValidatorSet>,
+            p1: Ref<'a, crate::sui_system::validator::Validator>,
         ) {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -5287,7 +5522,7 @@ pub mod sui_system {
         }
         pub fn calculate_total_stakes<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, Vec<validator::Validator>>,
+            p0: Ref<'a, Vec<crate::sui_system::validator::Validator>>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -5304,7 +5539,7 @@ pub mod sui_system {
         }
         pub fn can_join<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_set::ValidatorSet>,
+            p0: Ref<'a, crate::sui_system::validator_set::ValidatorSet>,
             p1: Arg<u64>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
@@ -5323,7 +5558,13 @@ pub mod sui_system {
         }
         pub fn clean_report_records_leaving_validator<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, vec_map::VecMap<Address, vec_set::VecSet<Address>>>,
+            p0: MutRef<
+                'a,
+                crate::sui::vec_map::VecMap<
+                    Address,
+                    crate::sui::vec_set::VecSet<Address>,
+                >,
+            >,
             p1: Arg<Address>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -5342,15 +5583,15 @@ pub mod sui_system {
         }
         pub fn compute_adjusted_reward_distribution<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, Vec<validator::Validator>>,
+            p0: Ref<'a, Vec<crate::sui_system::validator::Validator>>,
             p1: Arg<u64>,
             p2: Arg<u64>,
             p3: Arg<Vec<u64>>,
             p4: Arg<Vec<u64>>,
             p5: Arg<u64>,
-            p6: Arg<vec_map::VecMap<u64, u64>>,
+            p6: Arg<crate::sui::vec_map::VecMap<u64, u64>>,
             p7: Arg<u64>,
-            p8: Arg<vec_map::VecMap<u64, u64>>,
+            p8: Arg<crate::sui::vec_map::VecMap<u64, u64>>,
         ) -> Arg<Vec<u64>> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -5402,8 +5643,13 @@ pub mod sui_system {
         }
         pub fn compute_slashed_validators<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_set::ValidatorSet>,
-            p1: Arg<vec_map::VecMap<Address, vec_set::VecSet<Address>>>,
+            p0: Ref<'a, crate::sui_system::validator_set::ValidatorSet>,
+            p1: Arg<
+                crate::sui::vec_map::VecMap<
+                    Address,
+                    crate::sui::vec_set::VecSet<Address>,
+                >,
+            >,
         ) -> Arg<Vec<Address>> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -5421,7 +5667,7 @@ pub mod sui_system {
         }
         pub fn compute_unadjusted_reward_distribution<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, Vec<validator::Validator>>,
+            p0: Ref<'a, Vec<crate::sui_system::validator::Validator>>,
             p1: Arg<u64>,
             p2: Arg<u64>,
             p3: Arg<u64>,
@@ -5445,9 +5691,9 @@ pub mod sui_system {
         }
         pub fn convert_to_fungible_staked_sui<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator_set::ValidatorSet>,
-            p1: Arg<staking_pool::StakedSui>,
-        ) -> Arg<staking_pool::FungibleStakedSui> {
+            p0: MutRef<'a, crate::sui_system::validator_set::ValidatorSet>,
+            p1: Arg<crate::sui_system::staking_pool::StakedSui>,
+        ) -> Arg<crate::sui_system::staking_pool::FungibleStakedSui> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -5464,8 +5710,11 @@ pub mod sui_system {
         }
         pub fn count_duplicates_tablevec<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, table_vec::TableVec<validator::Validator>>,
-            p1: Ref<'a, validator::Validator>,
+            p0: Ref<
+                'a,
+                crate::sui::table_vec::TableVec<crate::sui_system::validator::Validator>,
+            >,
+            p1: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -5483,8 +5732,8 @@ pub mod sui_system {
         }
         pub fn count_duplicates_vec<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, Vec<validator::Validator>>,
-            p1: Ref<'a, validator::Validator>,
+            p0: Ref<'a, Vec<crate::sui_system::validator::Validator>>,
+            p1: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -5502,7 +5751,7 @@ pub mod sui_system {
         }
         pub fn derive_reference_gas_price<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_set::ValidatorSet>,
+            p0: Ref<'a, crate::sui_system::validator_set::ValidatorSet>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -5519,11 +5768,11 @@ pub mod sui_system {
         }
         pub fn distribute_reward<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, Vec<validator::Validator>>,
+            p0: MutRef<'a, Vec<crate::sui_system::validator::Validator>>,
             p1: Ref<'a, Vec<u64>>,
             p2: Ref<'a, Vec<u64>>,
-            p3: MutRef<'a, balance::Balance<sui::SUI>>,
-            p4: MutRef<'a, balance::Balance<sui::SUI>>,
+            p3: MutRef<'a, crate::sui::balance::Balance<crate::sui::sui::SUI>>,
+            p4: MutRef<'a, crate::sui::balance::Balance<crate::sui::sui::SUI>>,
         ) {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -5543,7 +5792,7 @@ pub mod sui_system {
         }
         pub fn effectuate_staged_metadata<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator_set::ValidatorSet>,
+            p0: MutRef<'a, crate::sui_system::validator_set::ValidatorSet>,
         ) {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -5560,10 +5809,16 @@ pub mod sui_system {
         pub fn emit_validator_epoch_events<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
             p0: Arg<u64>,
-            p1: Ref<'a, Vec<validator::Validator>>,
+            p1: Ref<'a, Vec<crate::sui_system::validator::Validator>>,
             p2: Ref<'a, Vec<u64>>,
             p3: Ref<'a, Vec<u64>>,
-            p4: Ref<'a, vec_map::VecMap<Address, vec_set::VecSet<Address>>>,
+            p4: Ref<
+                'a,
+                crate::sui::vec_map::VecMap<
+                    Address,
+                    crate::sui::vec_set::VecSet<Address>,
+                >,
+            >,
             p5: Ref<'a, Vec<Address>>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -5587,7 +5842,7 @@ pub mod sui_system {
         }
         pub fn find_validator<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, Vec<validator::Validator>>,
+            p0: Ref<'a, Vec<crate::sui_system::validator::Validator>>,
             p1: Arg<Address>,
         ) -> Arg<Option<u64>> {
             let p0 = p0.resolve_arg(builder);
@@ -5606,7 +5861,10 @@ pub mod sui_system {
         }
         pub fn find_validator_from_table_vec<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, table_vec::TableVec<validator::Validator>>,
+            p0: Ref<
+                'a,
+                crate::sui::table_vec::TableVec<crate::sui_system::validator::Validator>,
+            >,
             p1: Arg<Address>,
         ) -> Arg<Option<u64>> {
             let p0 = p0.resolve_arg(builder);
@@ -5625,10 +5883,10 @@ pub mod sui_system {
         }
         pub fn get_active_or_pending_or_candidate_validator_mut<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator_set::ValidatorSet>,
+            p0: MutRef<'a, crate::sui_system::validator_set::ValidatorSet>,
             p1: Arg<Address>,
             p2: Arg<bool>,
-        ) -> MutRef<'a, validator::Validator> {
+        ) -> MutRef<'a, crate::sui_system::validator::Validator> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -5649,10 +5907,10 @@ pub mod sui_system {
         }
         pub fn get_active_or_pending_or_candidate_validator_ref<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator_set::ValidatorSet>,
+            p0: MutRef<'a, crate::sui_system::validator_set::ValidatorSet>,
             p1: Arg<Address>,
             p2: Arg<u8>,
-        ) -> Ref<'a, validator::Validator> {
+        ) -> Ref<'a, crate::sui_system::validator::Validator> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -5673,9 +5931,9 @@ pub mod sui_system {
         }
         pub fn get_active_validator_ref<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_set::ValidatorSet>,
+            p0: Ref<'a, crate::sui_system::validator_set::ValidatorSet>,
             p1: Arg<Address>,
-        ) -> Ref<'a, validator::Validator> {
+        ) -> Ref<'a, crate::sui_system::validator::Validator> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -5692,9 +5950,9 @@ pub mod sui_system {
         }
         pub fn get_candidate_or_active_validator_mut<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator_set::ValidatorSet>,
+            p0: MutRef<'a, crate::sui_system::validator_set::ValidatorSet>,
             p1: Arg<Address>,
-        ) -> MutRef<'a, validator::Validator> {
+        ) -> MutRef<'a, crate::sui_system::validator::Validator> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -5712,9 +5970,9 @@ pub mod sui_system {
         }
         pub fn get_pending_validator_ref<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_set::ValidatorSet>,
+            p0: Ref<'a, crate::sui_system::validator_set::ValidatorSet>,
             p1: Arg<Address>,
-        ) -> Ref<'a, validator::Validator> {
+        ) -> Ref<'a, crate::sui_system::validator::Validator> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -5731,7 +5989,7 @@ pub mod sui_system {
         }
         pub fn get_validator_indices<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, Vec<validator::Validator>>,
+            p0: Ref<'a, Vec<crate::sui_system::validator::Validator>>,
             p1: Ref<'a, Vec<Address>>,
         ) -> Arg<Vec<u64>> {
             let p0 = p0.resolve_arg(builder);
@@ -5750,9 +6008,9 @@ pub mod sui_system {
         }
         pub fn get_validator_mut<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, Vec<validator::Validator>>,
+            p0: MutRef<'a, Vec<crate::sui_system::validator::Validator>>,
             p1: Arg<Address>,
-        ) -> MutRef<'a, validator::Validator> {
+        ) -> MutRef<'a, crate::sui_system::validator::Validator> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -5769,8 +6027,8 @@ pub mod sui_system {
         }
         pub fn get_validator_mut_with_ctx<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator_set::ValidatorSet>,
-        ) -> MutRef<'a, validator::Validator> {
+            p0: MutRef<'a, crate::sui_system::validator_set::ValidatorSet>,
+        ) -> MutRef<'a, crate::sui_system::validator::Validator> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -5786,8 +6044,8 @@ pub mod sui_system {
         }
         pub fn get_validator_mut_with_ctx_including_candidates<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator_set::ValidatorSet>,
-        ) -> MutRef<'a, validator::Validator> {
+            p0: MutRef<'a, crate::sui_system::validator_set::ValidatorSet>,
+        ) -> MutRef<'a, crate::sui_system::validator::Validator> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -5806,10 +6064,10 @@ pub mod sui_system {
         }
         pub fn get_validator_mut_with_verified_cap<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator_set::ValidatorSet>,
-            p1: Ref<'a, validator_cap::ValidatorOperationCap>,
+            p0: MutRef<'a, crate::sui_system::validator_set::ValidatorSet>,
+            p1: Ref<'a, crate::sui_system::validator_cap::ValidatorOperationCap>,
             p2: Arg<bool>,
-        ) -> MutRef<'a, validator::Validator> {
+        ) -> MutRef<'a, crate::sui_system::validator::Validator> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -5828,9 +6086,9 @@ pub mod sui_system {
         }
         pub fn get_validator_ref<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, Vec<validator::Validator>>,
+            p0: Ref<'a, Vec<crate::sui_system::validator::Validator>>,
             p1: Arg<Address>,
-        ) -> Ref<'a, validator::Validator> {
+        ) -> Ref<'a, crate::sui_system::validator::Validator> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -5847,7 +6105,7 @@ pub mod sui_system {
         }
         pub fn get_voting_power_thresholds<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_set::ValidatorSet>,
+            p0: Ref<'a, crate::sui_system::validator_set::ValidatorSet>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -5864,7 +6122,7 @@ pub mod sui_system {
         }
         pub fn is_active_validator<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_set::ValidatorSet>,
+            p0: Ref<'a, crate::sui_system::validator_set::ValidatorSet>,
             p1: Arg<Address>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
@@ -5883,7 +6141,7 @@ pub mod sui_system {
         }
         pub fn is_active_validator_by_sui_address<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_set::ValidatorSet>,
+            p0: Ref<'a, crate::sui_system::validator_set::ValidatorSet>,
             p1: Arg<Address>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
@@ -5903,7 +6161,7 @@ pub mod sui_system {
         }
         pub fn is_at_risk_validator<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_set::ValidatorSet>,
+            p0: Ref<'a, crate::sui_system::validator_set::ValidatorSet>,
             p1: Arg<Address>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
@@ -5922,8 +6180,8 @@ pub mod sui_system {
         }
         pub fn is_duplicate_validator<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, Vec<validator::Validator>>,
-            p1: Ref<'a, validator::Validator>,
+            p0: Ref<'a, Vec<crate::sui_system::validator::Validator>>,
+            p1: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -5941,8 +6199,8 @@ pub mod sui_system {
         }
         pub fn is_duplicate_with_active_validator<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_set::ValidatorSet>,
-            p1: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator_set::ValidatorSet>,
+            p1: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -5961,8 +6219,8 @@ pub mod sui_system {
         }
         pub fn is_duplicate_with_pending_validator<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_set::ValidatorSet>,
-            p1: Ref<'a, validator::Validator>,
+            p0: Ref<'a, crate::sui_system::validator_set::ValidatorSet>,
+            p1: Ref<'a, crate::sui_system::validator::Validator>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -5981,8 +6239,8 @@ pub mod sui_system {
         }
         pub fn is_inactive_validator<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_set::ValidatorSet>,
-            p1: Arg<sui_sdk_types::ObjectId>,
+            p0: Ref<'a, crate::sui_system::validator_set::ValidatorSet>,
+            p1: Arg<ObjectId>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -6000,7 +6258,7 @@ pub mod sui_system {
         }
         pub fn is_validator_candidate<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_set::ValidatorSet>,
+            p0: Ref<'a, crate::sui_system::validator_set::ValidatorSet>,
             p1: Arg<Address>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
@@ -6019,8 +6277,8 @@ pub mod sui_system {
         }
         pub fn new<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<Vec<validator::Validator>>,
-        ) -> Arg<validator_set::ValidatorSet> {
+            p0: Arg<Vec<crate::sui_system::validator::Validator>>,
+        ) -> Arg<crate::sui_system::validator_set::ValidatorSet> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -6036,7 +6294,7 @@ pub mod sui_system {
         }
         pub fn next_epoch_validator_count<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_set::ValidatorSet>,
+            p0: Ref<'a, crate::sui_system::validator_set::ValidatorSet>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -6053,9 +6311,15 @@ pub mod sui_system {
         }
         pub fn pool_exchange_rates<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator_set::ValidatorSet>,
-            p1: Ref<'a, sui_sdk_types::ObjectId>,
-        ) -> Ref<'a, table::Table<u64, staking_pool::PoolTokenExchangeRate>> {
+            p0: MutRef<'a, crate::sui_system::validator_set::ValidatorSet>,
+            p1: Ref<'a, ObjectId>,
+        ) -> Ref<
+            'a,
+            crate::sui::table::Table<
+                u64,
+                crate::sui_system::staking_pool::PoolTokenExchangeRate,
+            >,
+        > {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -6072,8 +6336,14 @@ pub mod sui_system {
         }
         pub fn process_pending_removals<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator_set::ValidatorSet>,
-            p1: MutRef<'a, vec_map::VecMap<Address, vec_set::VecSet<Address>>>,
+            p0: MutRef<'a, crate::sui_system::validator_set::ValidatorSet>,
+            p1: MutRef<
+                'a,
+                crate::sui::vec_map::VecMap<
+                    Address,
+                    crate::sui::vec_set::VecSet<Address>,
+                >,
+            >,
         ) {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -6090,7 +6360,7 @@ pub mod sui_system {
         }
         pub fn process_pending_stakes_and_withdraws<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, Vec<validator::Validator>>,
+            p0: MutRef<'a, Vec<crate::sui_system::validator::Validator>>,
         ) {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -6107,9 +6377,15 @@ pub mod sui_system {
         }
         pub fn process_validator_departure<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator_set::ValidatorSet>,
-            p1: Arg<validator::Validator>,
-            p2: MutRef<'a, vec_map::VecMap<Address, vec_set::VecSet<Address>>>,
+            p0: MutRef<'a, crate::sui_system::validator_set::ValidatorSet>,
+            p1: Arg<crate::sui_system::validator::Validator>,
+            p2: MutRef<
+                'a,
+                crate::sui::vec_map::VecMap<
+                    Address,
+                    crate::sui::vec_set::VecSet<Address>,
+                >,
+            >,
             p3: Arg<bool>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
@@ -6130,9 +6406,9 @@ pub mod sui_system {
         }
         pub fn redeem_fungible_staked_sui<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator_set::ValidatorSet>,
-            p1: Arg<staking_pool::FungibleStakedSui>,
-        ) -> Arg<balance::Balance<sui::SUI>> {
+            p0: MutRef<'a, crate::sui_system::validator_set::ValidatorSet>,
+            p1: Arg<crate::sui_system::staking_pool::FungibleStakedSui>,
+        ) -> Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -6149,10 +6425,10 @@ pub mod sui_system {
         }
         pub fn request_add_stake<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator_set::ValidatorSet>,
+            p0: MutRef<'a, crate::sui_system::validator_set::ValidatorSet>,
             p1: Arg<Address>,
-            p2: Arg<balance::Balance<sui::SUI>>,
-        ) -> Arg<staking_pool::StakedSui> {
+            p2: Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>>,
+        ) -> Arg<crate::sui_system::staking_pool::StakedSui> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -6170,7 +6446,7 @@ pub mod sui_system {
         }
         pub fn request_add_validator<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator_set::ValidatorSet>,
+            p0: MutRef<'a, crate::sui_system::validator_set::ValidatorSet>,
         ) {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -6186,8 +6462,8 @@ pub mod sui_system {
         }
         pub fn request_add_validator_candidate<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator_set::ValidatorSet>,
-            p1: Arg<validator::Validator>,
+            p0: MutRef<'a, crate::sui_system::validator_set::ValidatorSet>,
+            p1: Arg<crate::sui_system::validator::Validator>,
         ) {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -6204,7 +6480,7 @@ pub mod sui_system {
         }
         pub fn request_remove_validator<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator_set::ValidatorSet>,
+            p0: MutRef<'a, crate::sui_system::validator_set::ValidatorSet>,
         ) {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -6220,7 +6496,7 @@ pub mod sui_system {
         }
         pub fn request_remove_validator_candidate<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator_set::ValidatorSet>,
+            p0: MutRef<'a, crate::sui_system::validator_set::ValidatorSet>,
         ) {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -6237,7 +6513,7 @@ pub mod sui_system {
         }
         pub fn request_set_commission_rate<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator_set::ValidatorSet>,
+            p0: MutRef<'a, crate::sui_system::validator_set::ValidatorSet>,
             p1: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -6255,9 +6531,9 @@ pub mod sui_system {
         }
         pub fn request_withdraw_stake<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator_set::ValidatorSet>,
-            p1: Arg<staking_pool::StakedSui>,
-        ) -> Arg<balance::Balance<sui::SUI>> {
+            p0: MutRef<'a, crate::sui_system::validator_set::ValidatorSet>,
+            p1: Arg<crate::sui_system::staking_pool::StakedSui>,
+        ) -> Arg<crate::sui::balance::Balance<crate::sui::sui::SUI>> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -6290,8 +6566,8 @@ pub mod sui_system {
         }
         pub fn staking_pool_mappings<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_set::ValidatorSet>,
-        ) -> Ref<'a, table::Table<sui_sdk_types::ObjectId, Address>> {
+            p0: Ref<'a, crate::sui_system::validator_set::ValidatorSet>,
+        ) -> Ref<'a, crate::sui::table::Table<ObjectId, Address>> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -6307,7 +6583,7 @@ pub mod sui_system {
         }
         pub fn sum_voting_power_by_addresses<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, Vec<validator::Validator>>,
+            p0: Ref<'a, Vec<crate::sui_system::validator::Validator>>,
             p1: Ref<'a, Vec<Address>>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
@@ -6326,7 +6602,7 @@ pub mod sui_system {
         }
         pub fn total_stake<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_set::ValidatorSet>,
+            p0: Ref<'a, crate::sui_system::validator_set::ValidatorSet>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -6343,9 +6619,15 @@ pub mod sui_system {
         }
         pub fn update_validator_positions_and_calculate_total_stake<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator_set::ValidatorSet>,
+            p0: MutRef<'a, crate::sui_system::validator_set::ValidatorSet>,
             p1: Arg<u64>,
-            p2: MutRef<'a, vec_map::VecMap<Address, vec_set::VecSet<Address>>>,
+            p2: MutRef<
+                'a,
+                crate::sui::vec_map::VecMap<
+                    Address,
+                    crate::sui::vec_set::VecSet<Address>,
+                >,
+            >,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -6367,8 +6649,8 @@ pub mod sui_system {
         }
         pub fn validator_address_by_pool_id<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator_set::ValidatorSet>,
-            p1: Ref<'a, sui_sdk_types::ObjectId>,
+            p0: MutRef<'a, crate::sui_system::validator_set::ValidatorSet>,
+            p1: Ref<'a, ObjectId>,
         ) -> Arg<Address> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -6386,7 +6668,7 @@ pub mod sui_system {
         }
         pub fn validator_stake_amount<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_set::ValidatorSet>,
+            p0: Ref<'a, crate::sui_system::validator_set::ValidatorSet>,
             p1: Arg<Address>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
@@ -6405,9 +6687,9 @@ pub mod sui_system {
         }
         pub fn validator_staking_pool_id<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_set::ValidatorSet>,
+            p0: Ref<'a, crate::sui_system::validator_set::ValidatorSet>,
             p1: Arg<Address>,
-        ) -> Arg<sui_sdk_types::ObjectId> {
+        ) -> Arg<ObjectId> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -6424,7 +6706,7 @@ pub mod sui_system {
         }
         pub fn validator_total_stake_amount<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_set::ValidatorSet>,
+            p0: Ref<'a, crate::sui_system::validator_set::ValidatorSet>,
             p1: Arg<Address>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
@@ -6443,7 +6725,7 @@ pub mod sui_system {
         }
         pub fn validator_voting_power<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_set::ValidatorSet>,
+            p0: Ref<'a, crate::sui_system::validator_set::ValidatorSet>,
             p1: Arg<Address>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
@@ -6462,10 +6744,13 @@ pub mod sui_system {
         }
         pub fn verify_cap<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator_set::ValidatorSet>,
-            p1: Ref<'a, validator_cap::UnverifiedValidatorOperationCap>,
+            p0: MutRef<'a, crate::sui_system::validator_set::ValidatorSet>,
+            p1: Ref<
+                'a,
+                crate::sui_system::validator_cap::UnverifiedValidatorOperationCap,
+            >,
             p2: Arg<u8>,
-        ) -> Arg<validator_cap::ValidatorOperationCap> {
+        ) -> Arg<crate::sui_system::validator_cap::ValidatorOperationCap> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -6483,7 +6768,10 @@ pub mod sui_system {
         }
     }
     pub mod validator_wrapper {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -6492,7 +6780,7 @@ pub mod sui_system {
         pub const MODULE_NAME: &str = "validator_wrapper";
         #[derive(serde::Deserialize, serde::Serialize, Debug, MoveStruct)]
         pub struct ValidatorWrapper {
-            pub inner: versioned::Versioned,
+            pub inner: crate::sui::versioned::Versioned,
         }
         impl ValidatorWrapper {
             pub const TYPE_ORIGIN_ID: Address = Address::new([
@@ -6503,8 +6791,8 @@ pub mod sui_system {
         }
         pub fn create_v1<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<validator::Validator>,
-        ) -> Arg<validator_wrapper::ValidatorWrapper> {
+            p0: Arg<crate::sui_system::validator::Validator>,
+        ) -> Arg<crate::sui_system::validator_wrapper::ValidatorWrapper> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -6520,8 +6808,8 @@ pub mod sui_system {
         }
         pub fn destroy(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<validator_wrapper::ValidatorWrapper>,
-        ) -> Arg<validator::Validator> {
+            p0: Arg<crate::sui_system::validator_wrapper::ValidatorWrapper>,
+        ) -> Arg<crate::sui_system::validator::Validator> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -6537,8 +6825,8 @@ pub mod sui_system {
         }
         pub fn load_validator_maybe_upgrade<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, validator_wrapper::ValidatorWrapper>,
-        ) -> MutRef<'a, validator::Validator> {
+            p0: MutRef<'a, crate::sui_system::validator_wrapper::ValidatorWrapper>,
+        ) -> MutRef<'a, crate::sui_system::validator::Validator> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -6554,7 +6842,7 @@ pub mod sui_system {
         }
         pub fn upgrade_to_latest<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_wrapper::ValidatorWrapper>,
+            p0: Ref<'a, crate::sui_system::validator_wrapper::ValidatorWrapper>,
         ) {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -6570,7 +6858,7 @@ pub mod sui_system {
         }
         pub fn version<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, validator_wrapper::ValidatorWrapper>,
+            p0: Ref<'a, crate::sui_system::validator_wrapper::ValidatorWrapper>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -6587,7 +6875,10 @@ pub mod sui_system {
         }
     }
     pub mod voting_power {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -6621,7 +6912,7 @@ pub mod sui_system {
         }
         pub fn adjust_voting_power<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, Vec<voting_power::VotingPowerInfoV2>>,
+            p0: MutRef<'a, Vec<crate::sui_system::voting_power::VotingPowerInfoV2>>,
             p1: Arg<u64>,
             p2: Arg<u64>,
         ) {
@@ -6641,7 +6932,7 @@ pub mod sui_system {
         }
         pub fn check_invariants<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, Vec<validator::Validator>>,
+            p0: Ref<'a, Vec<crate::sui_system::validator::Validator>>,
         ) {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -6676,10 +6967,10 @@ pub mod sui_system {
         }
         pub fn init_voting_power_info<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, Vec<validator::Validator>>,
+            p0: Ref<'a, Vec<crate::sui_system::validator::Validator>>,
             p1: Arg<u64>,
             p2: Arg<u64>,
-        ) -> Arg<Vec<voting_power::VotingPowerInfoV2>> {
+        ) -> Arg<Vec<crate::sui_system::voting_power::VotingPowerInfoV2>> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             let p2 = p2.resolve_arg(builder);
@@ -6697,8 +6988,8 @@ pub mod sui_system {
         }
         pub fn insert<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, Vec<voting_power::VotingPowerInfoV2>>,
-            p1: Arg<voting_power::VotingPowerInfoV2>,
+            p0: MutRef<'a, Vec<crate::sui_system::voting_power::VotingPowerInfoV2>>,
+            p1: Arg<crate::sui_system::voting_power::VotingPowerInfoV2>,
         ) {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -6730,7 +7021,7 @@ pub mod sui_system {
         }
         pub fn set_voting_power<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, Vec<validator::Validator>>,
+            p0: MutRef<'a, Vec<crate::sui_system::validator::Validator>>,
             p1: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -6763,8 +7054,8 @@ pub mod sui_system {
         }
         pub fn update_voting_power<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, Vec<validator::Validator>>,
-            p1: Arg<Vec<voting_power::VotingPowerInfoV2>>,
+            p0: MutRef<'a, Vec<crate::sui_system::validator::Validator>>,
+            p1: Arg<Vec<crate::sui_system::voting_power::VotingPowerInfoV2>>,
         ) {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);

@@ -3,13 +3,12 @@ source: move-binding/tests/snapshot_tests.rs
 expression: pretty
 ---
 pub mod move_lib {
-    use std::str::FromStr;
-    use move_binding_derive::{Key, MoveStruct};
-    use move_types::{MoveType, Address, Identifier, TypeTag, StructTag};
-    use move_types::functions::{Arg, Ref, MutRef};
     pub const PACKAGE_VERSION: u64 = 15u64;
     pub mod address {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -33,7 +32,10 @@ pub mod move_lib {
         }
     }
     pub mod ascii {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -116,7 +118,7 @@ pub mod move_lib {
         }
         pub fn byte(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<ascii::Char>,
+            p0: Arg<crate::move_lib::ascii::Char>,
         ) -> Arg<u8> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -134,7 +136,7 @@ pub mod move_lib {
         pub fn char(
             builder: &mut sui_transaction_builder::TransactionBuilder,
             p0: Arg<u8>,
-        ) -> Arg<ascii::Char> {
+        ) -> Arg<crate::move_lib::ascii::Char> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -309,7 +311,7 @@ pub mod move_lib {
         pub fn pop_char<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
             p0: MutRef<'a, String>,
-        ) -> Arg<ascii::Char> {
+        ) -> Arg<crate::move_lib::ascii::Char> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -326,7 +328,7 @@ pub mod move_lib {
         pub fn push_char<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
             p0: MutRef<'a, String>,
-            p1: Arg<ascii::Char>,
+            p1: Arg<crate::move_lib::ascii::Char>,
         ) {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -432,7 +434,10 @@ pub mod move_lib {
         }
     }
     pub mod bcs {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -458,7 +463,10 @@ pub mod move_lib {
         }
     }
     pub mod bit_vector {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -479,7 +487,7 @@ pub mod move_lib {
         }
         pub fn is_index_set<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, bit_vector::BitVector>,
+            p0: Ref<'a, crate::move_lib::bit_vector::BitVector>,
             p1: Arg<u64>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
@@ -498,7 +506,7 @@ pub mod move_lib {
         }
         pub fn length<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, bit_vector::BitVector>,
+            p0: Ref<'a, crate::move_lib::bit_vector::BitVector>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -515,7 +523,7 @@ pub mod move_lib {
         }
         pub fn longest_set_sequence_starting_at<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Ref<'a, bit_vector::BitVector>,
+            p0: Ref<'a, crate::move_lib::bit_vector::BitVector>,
             p1: Arg<u64>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
@@ -536,7 +544,7 @@ pub mod move_lib {
         pub fn new(
             builder: &mut sui_transaction_builder::TransactionBuilder,
             p0: Arg<u64>,
-        ) -> Arg<bit_vector::BitVector> {
+        ) -> Arg<crate::move_lib::bit_vector::BitVector> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -552,7 +560,7 @@ pub mod move_lib {
         }
         pub fn set<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, bit_vector::BitVector>,
+            p0: MutRef<'a, crate::move_lib::bit_vector::BitVector>,
             p1: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -570,7 +578,7 @@ pub mod move_lib {
         }
         pub fn shift_left<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, bit_vector::BitVector>,
+            p0: MutRef<'a, crate::move_lib::bit_vector::BitVector>,
             p1: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -588,7 +596,7 @@ pub mod move_lib {
         }
         pub fn unset<'a>(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: MutRef<'a, bit_vector::BitVector>,
+            p0: MutRef<'a, crate::move_lib::bit_vector::BitVector>,
             p1: Arg<u64>,
         ) {
             let p0 = p0.resolve_arg(builder);
@@ -606,7 +614,10 @@ pub mod move_lib {
         }
     }
     pub mod debug {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -645,7 +656,10 @@ pub mod move_lib {
         }
     }
     pub mod fixed_point32 {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -667,7 +681,7 @@ pub mod move_lib {
             builder: &mut sui_transaction_builder::TransactionBuilder,
             p0: Arg<u64>,
             p1: Arg<u64>,
-        ) -> Arg<fixed_point32::FixedPoint32> {
+        ) -> Arg<crate::move_lib::fixed_point32::FixedPoint32> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -685,7 +699,7 @@ pub mod move_lib {
         pub fn create_from_raw_value(
             builder: &mut sui_transaction_builder::TransactionBuilder,
             p0: Arg<u64>,
-        ) -> Arg<fixed_point32::FixedPoint32> {
+        ) -> Arg<crate::move_lib::fixed_point32::FixedPoint32> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -702,7 +716,7 @@ pub mod move_lib {
         pub fn divide_u64(
             builder: &mut sui_transaction_builder::TransactionBuilder,
             p0: Arg<u64>,
-            p1: Arg<fixed_point32::FixedPoint32>,
+            p1: Arg<crate::move_lib::fixed_point32::FixedPoint32>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -720,7 +734,7 @@ pub mod move_lib {
         }
         pub fn get_raw_value(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<fixed_point32::FixedPoint32>,
+            p0: Arg<crate::move_lib::fixed_point32::FixedPoint32>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -737,7 +751,7 @@ pub mod move_lib {
         }
         pub fn is_zero(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<fixed_point32::FixedPoint32>,
+            p0: Arg<crate::move_lib::fixed_point32::FixedPoint32>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -755,7 +769,7 @@ pub mod move_lib {
         pub fn multiply_u64(
             builder: &mut sui_transaction_builder::TransactionBuilder,
             p0: Arg<u64>,
-            p1: Arg<fixed_point32::FixedPoint32>,
+            p1: Arg<crate::move_lib::fixed_point32::FixedPoint32>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -773,7 +787,10 @@ pub mod move_lib {
         }
     }
     pub mod hash {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -816,7 +833,10 @@ pub mod move_lib {
         }
     }
     pub mod option {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -1135,7 +1155,10 @@ pub mod move_lib {
         }
     }
     pub mod string {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -1501,7 +1524,10 @@ pub mod move_lib {
         }
     }
     pub mod type_name {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -1636,7 +1662,10 @@ pub mod move_lib {
         }
     }
     pub mod u128 {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -1859,7 +1888,10 @@ pub mod move_lib {
         }
     }
     pub mod u16 {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -2031,7 +2063,10 @@ pub mod move_lib {
         }
     }
     pub mod u256 {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -2254,7 +2289,10 @@ pub mod move_lib {
         }
     }
     pub mod u32 {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -2443,7 +2481,10 @@ pub mod move_lib {
         }
     }
     pub mod u64 {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -2649,7 +2690,10 @@ pub mod move_lib {
         }
     }
     pub mod u8 {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -2804,7 +2848,10 @@ pub mod move_lib {
         }
     }
     pub mod uq32_32 {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -2824,9 +2871,9 @@ pub mod move_lib {
         }
         pub fn add(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<uq32_32::UQ32_32>,
-            p1: Arg<uq32_32::UQ32_32>,
-        ) -> Arg<uq32_32::UQ32_32> {
+            p0: Arg<crate::move_lib::uq32_32::UQ32_32>,
+            p1: Arg<crate::move_lib::uq32_32::UQ32_32>,
+        ) -> Arg<crate::move_lib::uq32_32::UQ32_32> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -2843,9 +2890,9 @@ pub mod move_lib {
         }
         pub fn div(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<uq32_32::UQ32_32>,
-            p1: Arg<uq32_32::UQ32_32>,
-        ) -> Arg<uq32_32::UQ32_32> {
+            p0: Arg<crate::move_lib::uq32_32::UQ32_32>,
+            p1: Arg<crate::move_lib::uq32_32::UQ32_32>,
+        ) -> Arg<crate::move_lib::uq32_32::UQ32_32> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -2863,7 +2910,7 @@ pub mod move_lib {
         pub fn from_int(
             builder: &mut sui_transaction_builder::TransactionBuilder,
             p0: Arg<u32>,
-        ) -> Arg<uq32_32::UQ32_32> {
+        ) -> Arg<crate::move_lib::uq32_32::UQ32_32> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -2881,7 +2928,7 @@ pub mod move_lib {
             builder: &mut sui_transaction_builder::TransactionBuilder,
             p0: Arg<u64>,
             p1: Arg<u64>,
-        ) -> Arg<uq32_32::UQ32_32> {
+        ) -> Arg<crate::move_lib::uq32_32::UQ32_32> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -2899,7 +2946,7 @@ pub mod move_lib {
         pub fn from_raw(
             builder: &mut sui_transaction_builder::TransactionBuilder,
             p0: Arg<u64>,
-        ) -> Arg<uq32_32::UQ32_32> {
+        ) -> Arg<crate::move_lib::uq32_32::UQ32_32> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -2915,8 +2962,8 @@ pub mod move_lib {
         }
         pub fn ge(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<uq32_32::UQ32_32>,
-            p1: Arg<uq32_32::UQ32_32>,
+            p0: Arg<crate::move_lib::uq32_32::UQ32_32>,
+            p1: Arg<crate::move_lib::uq32_32::UQ32_32>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -2934,8 +2981,8 @@ pub mod move_lib {
         }
         pub fn gt(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<uq32_32::UQ32_32>,
-            p1: Arg<uq32_32::UQ32_32>,
+            p0: Arg<crate::move_lib::uq32_32::UQ32_32>,
+            p1: Arg<crate::move_lib::uq32_32::UQ32_32>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -2954,7 +3001,7 @@ pub mod move_lib {
         pub fn int_div(
             builder: &mut sui_transaction_builder::TransactionBuilder,
             p0: Arg<u64>,
-            p1: Arg<uq32_32::UQ32_32>,
+            p1: Arg<crate::move_lib::uq32_32::UQ32_32>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -2973,7 +3020,7 @@ pub mod move_lib {
         pub fn int_mul(
             builder: &mut sui_transaction_builder::TransactionBuilder,
             p0: Arg<u64>,
-            p1: Arg<uq32_32::UQ32_32>,
+            p1: Arg<crate::move_lib::uq32_32::UQ32_32>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -2991,8 +3038,8 @@ pub mod move_lib {
         }
         pub fn le(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<uq32_32::UQ32_32>,
-            p1: Arg<uq32_32::UQ32_32>,
+            p0: Arg<crate::move_lib::uq32_32::UQ32_32>,
+            p1: Arg<crate::move_lib::uq32_32::UQ32_32>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -3010,8 +3057,8 @@ pub mod move_lib {
         }
         pub fn lt(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<uq32_32::UQ32_32>,
-            p1: Arg<uq32_32::UQ32_32>,
+            p0: Arg<crate::move_lib::uq32_32::UQ32_32>,
+            p1: Arg<crate::move_lib::uq32_32::UQ32_32>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -3029,9 +3076,9 @@ pub mod move_lib {
         }
         pub fn mul(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<uq32_32::UQ32_32>,
-            p1: Arg<uq32_32::UQ32_32>,
-        ) -> Arg<uq32_32::UQ32_32> {
+            p0: Arg<crate::move_lib::uq32_32::UQ32_32>,
+            p1: Arg<crate::move_lib::uq32_32::UQ32_32>,
+        ) -> Arg<crate::move_lib::uq32_32::UQ32_32> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -3048,9 +3095,9 @@ pub mod move_lib {
         }
         pub fn sub(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<uq32_32::UQ32_32>,
-            p1: Arg<uq32_32::UQ32_32>,
-        ) -> Arg<uq32_32::UQ32_32> {
+            p0: Arg<crate::move_lib::uq32_32::UQ32_32>,
+            p1: Arg<crate::move_lib::uq32_32::UQ32_32>,
+        ) -> Arg<crate::move_lib::uq32_32::UQ32_32> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -3067,7 +3114,7 @@ pub mod move_lib {
         }
         pub fn to_int(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<uq32_32::UQ32_32>,
+            p0: Arg<crate::move_lib::uq32_32::UQ32_32>,
         ) -> Arg<u32> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -3084,7 +3131,7 @@ pub mod move_lib {
         }
         pub fn to_raw(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<uq32_32::UQ32_32>,
+            p0: Arg<crate::move_lib::uq32_32::UQ32_32>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -3101,7 +3148,10 @@ pub mod move_lib {
         }
     }
     pub mod uq64_64 {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
@@ -3121,9 +3171,9 @@ pub mod move_lib {
         }
         pub fn add(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<uq64_64::UQ64_64>,
-            p1: Arg<uq64_64::UQ64_64>,
-        ) -> Arg<uq64_64::UQ64_64> {
+            p0: Arg<crate::move_lib::uq64_64::UQ64_64>,
+            p1: Arg<crate::move_lib::uq64_64::UQ64_64>,
+        ) -> Arg<crate::move_lib::uq64_64::UQ64_64> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -3140,9 +3190,9 @@ pub mod move_lib {
         }
         pub fn div(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<uq64_64::UQ64_64>,
-            p1: Arg<uq64_64::UQ64_64>,
-        ) -> Arg<uq64_64::UQ64_64> {
+            p0: Arg<crate::move_lib::uq64_64::UQ64_64>,
+            p1: Arg<crate::move_lib::uq64_64::UQ64_64>,
+        ) -> Arg<crate::move_lib::uq64_64::UQ64_64> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -3160,7 +3210,7 @@ pub mod move_lib {
         pub fn from_int(
             builder: &mut sui_transaction_builder::TransactionBuilder,
             p0: Arg<u64>,
-        ) -> Arg<uq64_64::UQ64_64> {
+        ) -> Arg<crate::move_lib::uq64_64::UQ64_64> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -3178,7 +3228,7 @@ pub mod move_lib {
             builder: &mut sui_transaction_builder::TransactionBuilder,
             p0: Arg<u128>,
             p1: Arg<u128>,
-        ) -> Arg<uq64_64::UQ64_64> {
+        ) -> Arg<crate::move_lib::uq64_64::UQ64_64> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -3196,7 +3246,7 @@ pub mod move_lib {
         pub fn from_raw(
             builder: &mut sui_transaction_builder::TransactionBuilder,
             p0: Arg<u128>,
-        ) -> Arg<uq64_64::UQ64_64> {
+        ) -> Arg<crate::move_lib::uq64_64::UQ64_64> {
             let p0 = p0.resolve_arg(builder);
             builder
                 .move_call(
@@ -3212,8 +3262,8 @@ pub mod move_lib {
         }
         pub fn ge(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<uq64_64::UQ64_64>,
-            p1: Arg<uq64_64::UQ64_64>,
+            p0: Arg<crate::move_lib::uq64_64::UQ64_64>,
+            p1: Arg<crate::move_lib::uq64_64::UQ64_64>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -3231,8 +3281,8 @@ pub mod move_lib {
         }
         pub fn gt(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<uq64_64::UQ64_64>,
-            p1: Arg<uq64_64::UQ64_64>,
+            p0: Arg<crate::move_lib::uq64_64::UQ64_64>,
+            p1: Arg<crate::move_lib::uq64_64::UQ64_64>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -3251,7 +3301,7 @@ pub mod move_lib {
         pub fn int_div(
             builder: &mut sui_transaction_builder::TransactionBuilder,
             p0: Arg<u128>,
-            p1: Arg<uq64_64::UQ64_64>,
+            p1: Arg<crate::move_lib::uq64_64::UQ64_64>,
         ) -> Arg<u128> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -3270,7 +3320,7 @@ pub mod move_lib {
         pub fn int_mul(
             builder: &mut sui_transaction_builder::TransactionBuilder,
             p0: Arg<u128>,
-            p1: Arg<uq64_64::UQ64_64>,
+            p1: Arg<crate::move_lib::uq64_64::UQ64_64>,
         ) -> Arg<u128> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -3288,8 +3338,8 @@ pub mod move_lib {
         }
         pub fn le(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<uq64_64::UQ64_64>,
-            p1: Arg<uq64_64::UQ64_64>,
+            p0: Arg<crate::move_lib::uq64_64::UQ64_64>,
+            p1: Arg<crate::move_lib::uq64_64::UQ64_64>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -3307,8 +3357,8 @@ pub mod move_lib {
         }
         pub fn lt(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<uq64_64::UQ64_64>,
-            p1: Arg<uq64_64::UQ64_64>,
+            p0: Arg<crate::move_lib::uq64_64::UQ64_64>,
+            p1: Arg<crate::move_lib::uq64_64::UQ64_64>,
         ) -> Arg<bool> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
@@ -3326,9 +3376,9 @@ pub mod move_lib {
         }
         pub fn mul(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<uq64_64::UQ64_64>,
-            p1: Arg<uq64_64::UQ64_64>,
-        ) -> Arg<uq64_64::UQ64_64> {
+            p0: Arg<crate::move_lib::uq64_64::UQ64_64>,
+            p1: Arg<crate::move_lib::uq64_64::UQ64_64>,
+        ) -> Arg<crate::move_lib::uq64_64::UQ64_64> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -3345,9 +3395,9 @@ pub mod move_lib {
         }
         pub fn sub(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<uq64_64::UQ64_64>,
-            p1: Arg<uq64_64::UQ64_64>,
-        ) -> Arg<uq64_64::UQ64_64> {
+            p0: Arg<crate::move_lib::uq64_64::UQ64_64>,
+            p1: Arg<crate::move_lib::uq64_64::UQ64_64>,
+        ) -> Arg<crate::move_lib::uq64_64::UQ64_64> {
             let p0 = p0.resolve_arg(builder);
             let p1 = p1.resolve_arg(builder);
             builder
@@ -3364,7 +3414,7 @@ pub mod move_lib {
         }
         pub fn to_int(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<uq64_64::UQ64_64>,
+            p0: Arg<crate::move_lib::uq64_64::UQ64_64>,
         ) -> Arg<u64> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -3381,7 +3431,7 @@ pub mod move_lib {
         }
         pub fn to_raw(
             builder: &mut sui_transaction_builder::TransactionBuilder,
-            p0: Arg<uq64_64::UQ64_64>,
+            p0: Arg<crate::move_lib::uq64_64::UQ64_64>,
         ) -> Arg<u128> {
             let p0 = p0.resolve_arg(builder);
             builder
@@ -3398,7 +3448,10 @@ pub mod move_lib {
         }
     }
     pub mod vector {
-        use super::*;
+        use std::str::FromStr;
+        use move_binding_derive::{MoveStruct, Key};
+        use move_types::{MoveType, Address, Identifier, ObjectId};
+        use move_types::functions::{Arg, Ref, MutRef};
         pub const PACKAGE_ID: Address = Address::new([
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,

@@ -1745,6 +1745,7 @@ dependencies = [
  "move-binary-format",
  "move-core-types",
  "move-types",
+ "once_cell",
  "prettyplease",
  "proc-macro2",
  "quote",

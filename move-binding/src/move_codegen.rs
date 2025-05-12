@@ -1,20 +1,31 @@
 use crate::package_provider::{ModuleProvider, MoveModuleProvider};
 use crate::types::ToRustType;
 use crate::SuiNetwork;
+use itertools::Itertools;
 use move_binary_format::normalized::{Enum, Function, Struct, Type};
 use move_core_types::account_address::AccountAddress;
 use move_core_types::identifier::Identifier;
+use once_cell::sync::Lazy;
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
 use std::collections::{BTreeMap, HashMap};
-use syn::Path;
+use std::sync::RwLock;
+
+pub static BINDING_REGISTRY: Lazy<RwLock<HashMap<AccountAddress, String>>> = Lazy::new(|| RwLock::new(HashMap::new()));
 
 pub struct MoveCodegen;
 
 impl MoveCodegen {
-    pub fn expand(network: SuiNetwork, package: &str, package_alias: &str, deps: Vec<Path>) -> Result<TokenStream, anyhow::Error> {
+    pub fn expand(network: SuiNetwork, package: &str, package_alias: &str, base_path: &str) -> Result<TokenStream, anyhow::Error> {
         let module_provider = MoveModuleProvider::new(network);
         let package = module_provider.get_package(package)?;
+
+        // register package path
+        let mut cache = BINDING_REGISTRY.write().unwrap();
+        package.type_origin_table.iter().flat_map(|(_, m)| m.values()).dedup().for_each(|addr| {
+            cache.insert(addr.clone(), format!("{base_path}::{package_alias}"));
+        });
+        drop(cache);
 
         let module_tokens = package.module_map.iter().map(|(module_name, module)| {
             let module_ident = Ident::new(module_name, proc_macro2::Span::call_site());
@@ -23,17 +34,10 @@ impl MoveCodegen {
                 .get(module_name)
                 .cloned()
                 .unwrap_or_default();
+
             let mut struct_fun_tokens = Self::create_structs(&module.structs, &type_origin_table)?;
-
-            if !module.enums.is_empty() {
-                let enum_tokens = Self::create_enums(&module.enums, &type_origin_table);
-                struct_fun_tokens.extend(enum_tokens);
-            }
-
-            if !module.functions.is_empty() {
-                let fun_impl = Self::create_funs(&module.functions);
-                struct_fun_tokens.extend(fun_impl);
-            }
+            struct_fun_tokens.extend(Self::create_enums(&module.enums, &type_origin_table));
+            struct_fun_tokens.extend(Self::create_funs(&module.functions));
 
             Ok::<_, anyhow::Error>(if struct_fun_tokens.is_empty() {
                 quote! {}
@@ -41,7 +45,10 @@ impl MoveCodegen {
                 let addr_byte_ident = module.address.to_vec();
                 quote! {
                     pub mod #module_ident{
-                        use super::*;
+                        use std::str::FromStr;
+                        use move_binding_derive::{MoveStruct, Key};
+                        use move_types::{MoveType, Address, Identifier, ObjectId};
+                        use move_types::functions::{Arg, Ref, MutRef};
                         pub const PACKAGE_ID: Address = Address::new([#(#addr_byte_ident),*]);
                         pub const MODULE_NAME: &str = #module_name;
                         #(#struct_fun_tokens)*
@@ -52,13 +59,9 @@ impl MoveCodegen {
 
         let package_ident = Ident::new(&package_alias, proc_macro2::Span::call_site());
         let version = package.version;
+
         Ok(quote! {
             pub mod #package_ident{
-                #(use #deps::*;)*
-                use std::str::FromStr;
-                use move_binding_derive::{Key, MoveStruct};
-                use move_types::{MoveType, Address, Identifier, TypeTag, StructTag};
-                use move_types::functions::{Arg, Ref, MutRef};
                 pub const PACKAGE_VERSION:u64 = #version;
                 #(#module_tokens)*
             }

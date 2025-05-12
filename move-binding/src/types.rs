@@ -1,3 +1,4 @@
+use crate::move_codegen::BINDING_REGISTRY;
 use itertools::Itertools;
 use move_binary_format::normalized::Type;
 use move_core_types::account_address::AccountAddress;
@@ -70,14 +71,20 @@ impl ToRustType for Type {
                     format!("Option<{}>", type_arguments[0].to_rust_type())
                 }
 
-                (&AccountAddress::TWO, "object", "UID") => "sui_sdk_types::ObjectId".to_string(),
-                (&AccountAddress::TWO, "object", "ID") => "sui_sdk_types::ObjectId".to_string(),
+                (&AccountAddress::TWO, "object", "UID") => "ObjectId".to_string(),
+                (&AccountAddress::TWO, "object", "ID") => "ObjectId".to_string(),
                 _ => {
+                    let cache = BINDING_REGISTRY.read().unwrap();
+                    let package_path = cache.get(address).cloned().expect(&format!("failed to resolve: use of undeclared package `{address}`"));
+                    drop(cache); // Release read lock
+
+                    let type_ = format!("{package_path}::{module}::{name}");
+
                     if type_arguments.is_empty() {
-                        format!("{module}::{name}")
+                        type_
                     } else {
                         format!(
-                            "{module}::{name}<{}>",
+                            "{type_}<{}>",
                             type_arguments.iter().map(|ty| ty.to_rust_type()).join(", ")
                         )
                     }
