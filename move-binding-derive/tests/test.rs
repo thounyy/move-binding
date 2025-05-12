@@ -116,11 +116,4 @@ async fn test_deserialize_enum() {
     let bytes = bcs::to_bytes(&miss).unwrap();
     let deserialized: history::Record = bcs::from_bytes(&bytes).unwrap();
     println!("Deserialized: {:?}", deserialized);
-
-    test_lib::dep_map()
-}
-
-
-pub mod test_lib {
-    pub fn dep_map() {}
 }
