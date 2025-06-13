@@ -1,3 +1,4 @@
+use crate::package_id_resolver::PackageIdResolver;
 use crate::SuiNetwork;
 use fastcrypto::encoding::{Base64, Encoding};
 use move_binary_format::normalized::Module;
@@ -7,10 +8,9 @@ use reqwest::header::CONTENT_TYPE;
 use serde_json::{json, Value};
 use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
-use sui_sdk_types::Address;
 
 pub trait ModuleProvider {
-    fn get_package(&self, package_id: Address) -> Package;
+    fn get_package(&self, package_id: &str) -> Result<Package, anyhow::Error>;
 }
 
 pub struct MoveModuleProvider {
@@ -24,9 +24,9 @@ impl MoveModuleProvider {
 }
 
 impl ModuleProvider for MoveModuleProvider {
-    fn get_package(&self, package_id: Address) -> Package {
+    fn get_package(&self, package: &str) -> Result<Package, anyhow::Error> {
+        let package_id = PackageIdResolver::resolve_package_id(self.network, package)?;
         let client = reqwest::blocking::Client::new();
-
         let request = format!(
             r#"{{package(address: "{package_id}") {{moduleBcs, typeOrigins{{module, struct, definingId}}, version}}}}"#
         );
@@ -50,14 +50,14 @@ impl ModuleProvider for MoveModuleProvider {
         let module_map = module_map
             .iter()
             .map(|(name, bytes)| {
-                let module = CompiledModule::deserialize_with_defaults(bytes).unwrap();
+                let module = CompiledModule::deserialize_with_defaults(bytes)?;
                 let normalized = Module::new(&module);
-                (name.clone(), normalized)
+                Ok::<_, anyhow::Error>((name.clone(), normalized))
             })
-            .collect();
+            .collect::<Result<_, _>>()?;
 
         let type_origin_table: Vec<Value> =
-            serde_json::from_value(value["data"]["package"]["typeOrigins"].clone()).unwrap();
+            serde_json::from_value(value["data"]["package"]["typeOrigins"].clone())?;
 
         let type_origin_table = type_origin_table.iter().fold(
             HashMap::new(),
@@ -73,13 +73,13 @@ impl ModuleProvider for MoveModuleProvider {
             },
         );
 
-        let version = serde_json::from_value(value["data"]["package"]["version"].clone()).unwrap();
+        let version = serde_json::from_value(value["data"]["package"]["version"].clone())?;
 
-        Package {
+        Ok(Package {
             module_map,
             type_origin_table,
             version,
-        }
+        })
     }
 }
 
