@@ -106,7 +106,7 @@ impl Parse for MoveContractArgs {
                 alias = Some(input.parse::<LitStr>()?.value()); // Parse string literal
             } else if key == "package" {
                 package = Some(input.parse::<LitStr>()?.value()); // Parse string literal
-            } else if key == "deps" {
+            } else if key == "base_path" {
                 path = Some(quote!(input.parse::<Path>()?).to_string()); // Parse string literal
             } else if key == "network" {
                 if let Ok(lit) = input.parse::<LitStr>() {
