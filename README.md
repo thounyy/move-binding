@@ -35,7 +35,13 @@ use crate::sui::dynamic_field::Field;
 use move_binding_derive::move_contract;
 
 move_contract! {alias = "sui", package = "0x2"}
-move_contract! {alias = "bridge", package = "0xb", deps = [crate::sui]}
+move_contract! {alias = "bridge", package = "0xb"}
+
+// Example for move package import where base module path is not "crate"
+pub mod models {
+    use move_binding_derive::move_contract;
+    move_contract! {alias = "sui_system", package = "0x3", base_path = crate::models }
+}
 
 #[tokio::main]
 async fn main() {
