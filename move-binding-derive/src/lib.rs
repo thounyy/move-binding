@@ -4,7 +4,7 @@ use proc_macro::TokenStream;
 use proc_macro2::Ident;
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
-use syn::{parse_macro_input, DeriveInput, GenericParam, Generics, LitStr, Token};
+use syn::{parse_macro_input, DeriveInput, ExprPath, GenericParam, Generics, LitStr, Token};
 
 #[proc_macro_derive(Key)]
 pub fn key_derive(input: TokenStream) -> TokenStream {
@@ -107,7 +107,8 @@ impl Parse for MoveContractArgs {
             } else if key == "package" {
                 package = Some(input.parse::<LitStr>()?.value()); // Parse string literal
             } else if key == "base_path" {
-                path = Some(quote!(input.parse::<Path>()?).to_string()); // Parse string literal
+                let p = input.parse::<ExprPath>()?.path;
+                path = Some(quote!(#p).to_string()); // Parse string literal
             } else if key == "network" {
                 if let Ok(lit) = input.parse::<LitStr>() {
                     network = match lit.value().to_lowercase().as_str() {
